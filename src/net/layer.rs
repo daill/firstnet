@@ -4,6 +4,10 @@ struct Layer {
 }
 
 impl Layer {
-    fn new(input_size: u32) = Self {
+    fn new(input_size: u32) -> Layer{ 
+        Layer {
+            bias: 1.2, 
+            weights: vec![0],
+        }
     }
 }

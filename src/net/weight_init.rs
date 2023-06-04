@@ -1,5 +1,7 @@
-fn he_init(size: u32) -> Vec<f32> {}
+fn he_init(size: u32) -> Vec<f32> {
 
-fn get_weight_vec(size: u32) -> Vec<f32> {
-    let weights: Vec<f32> = Vec::with_capacity(&size);
+}
+
+pub fn get_weight_vec(dsize: u32) -> Vec<f32> {
+    return Vec::with_capacity(usize::try);
 }
