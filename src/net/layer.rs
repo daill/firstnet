@@ -1,19 +1,27 @@
 use crate::net::node::Node;
-use crate::net::weight_init;
 
-use self::weight_init::he_init;
+use super::weight_init::xavier_init;
 
-struct Layer {
-    weights: Vec<Node>,
-    bias: f32,
+#[derive(Debug, Clone)]
+pub struct Layer {
+    nodes: Vec<Node>,
 }
 
 impl Layer {
     fn new(input_size: u32) -> Layer {
-        he_init(5);
-        Layer {
-            bias: 1.2,
-            weights: vec![Node],
-        }
+        let nodes: Vec<Node> = xavier_init(5, 5);
+        Layer { nodes }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn layer_test() {
+        let a = Layer::new(5);
+        println!("{:?}", a);
+        assert_eq!(1, 0);
     }
 }
