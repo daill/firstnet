@@ -8,7 +8,7 @@ pub struct Layer {
 }
 
 impl Layer {
-    fn new(input_size: u32) -> Layer {
+    pub fn new(input_size: u32) -> Layer {
         let nodes: Vec<Node> = xavier_init(5, 5);
         Layer { nodes }
     }

@@ -8,11 +8,16 @@ pub struct Network {
 }
 
 impl Network {
-    fn new(input_layer: Layer, hidden_layer: Vec<Layer>, output_layer: Layer) -> Network {
-        Network {
+    pub fn new(input_layer: Layer, hidden_layer: Vec<Layer>, output_layer: Layer) -> Self {
+        Self {
             input_layer,
             hidden_layer,
             output_layer,
         }
+    }
+
+    pub fn run() {
+        // for every value inside the input layer 
+        // get each hidden layer
     }
 }
