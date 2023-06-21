@@ -1,15 +1,15 @@
-use crate::net::node::Node;
+use crate::net::node::Neuron;
 
 use super::weight_init::xavier_init;
 
 #[derive(Debug, Clone)]
 pub struct Layer {
-    nodes: Vec<Node>,
+    nodes: Vec<Neuron>,
 }
 
 impl Layer {
     pub fn new(input_size: u32) -> Layer {
-        let nodes: Vec<Node> = xavier_init(5, 5);
+        let nodes: Vec<Neuron> = xavier_init(5, 5);
         Layer { nodes }
     }
 }
