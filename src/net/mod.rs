@@ -1,5 +1,4 @@
-pub mod activate_functions;
-pub mod layer;
-pub mod network;
-pub mod neuron;
-pub mod weight_init;
+pub(crate) mod layer;
+pub(crate) mod network;
+mod neuron;
+mod weight_functions;

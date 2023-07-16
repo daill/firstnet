@@ -1,16 +1,46 @@
-use crate::net::node::Neuron;
+use crate::net::weight_functions::zero_value_init;
+use std::fmt;
 
-use super::weight_init::xavier_init;
+use crate::net::neuron::Neuron;
 
 #[derive(Debug, Clone)]
-pub struct Layer {
-    nodes: Vec<Neuron>,
+pub struct HiddenLayer(pub Vec<Neuron>);
+
+impl HiddenLayer {
+    pub fn new(layer_size: u32) -> Self {
+        let nodes: Vec<Neuron> = zero_value_init(layer_size);
+        HiddenLayer(nodes)
+    }
+
+    // returns the weight array of each node in an array
+    pub fn get_tenso(&self) -> [[f32]] {
+        return [[0.0; self.0.first().unwrap().len()]; self.0.len()];
+    }
 }
 
-impl Layer {
-    pub fn new(input_size: u32) -> Layer {
-        let nodes: Vec<Neuron> = xavier_init(5, 5);
-        Layer { nodes }
+impl fmt::Display for InputLayer {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "nodes: {:?}\n", self.0)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct InputLayer(pub Vec<Neuron>);
+
+impl InputLayer {
+    pub fn new(layer_size: u32) -> Self {
+        let nodes: Vec<Neuron> = zero_value_init(layer_size);
+        InputLayer(nodes)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct OutputLayer(pub Vec<Neuron>);
+
+impl OutputLayer {
+    pub fn new(layer_size: u32) -> Self {
+        let nodes: Vec<Neuron> = zero_value_init(layer_size);
+        OutputLayer(nodes)
     }
 }
 
@@ -20,7 +50,7 @@ mod tests {
 
     #[test]
     fn layer_test() {
-        let a = Layer::new(5);
+        let a = Layer::new(5, 5);
         println!("{:?}", a);
         assert_eq!(1, 0);
     }
