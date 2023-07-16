@@ -4,16 +4,20 @@ use std::fmt;
 use crate::net::neuron::Neuron;
 
 #[derive(Debug, Clone)]
-pub struct HiddenLayer(pub Vec<Neuron>);
+pub struct HiddenLayer {
+    nodes: Vec<Neuron>,
+    layer_size: i32,
+}
 
 impl HiddenLayer {
     pub fn new(layer_size: u32) -> Self {
         let nodes: Vec<Neuron> = zero_value_init(layer_size);
-        HiddenLayer(nodes)
+        let layer_size = nodes.len();
+        HiddenLayer { nodes, layer_size }
     }
 
     // returns the weight array of each node in an array
-    pub fn get_tenso(&self) -> [[f32]] {
+    pub fn get_tensor(&self) -> [[f32]] {
         return [[0.0; self.0.first().unwrap().len()]; self.0.len()];
     }
 }
