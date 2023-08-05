@@ -2,15 +2,21 @@ use std::fmt;
 
 use crate::net::layer::Layer;
 
+use super::layer::{HiddenLayer, InputLayer, OutputLayer};
+
 #[derive(Debug, Clone)]
 pub struct Network {
-    input_layer: Layer,
-    hidden_layer: Vec<Layer>,
-    output_layer: Layer,
+    input_layer: InputLayer,
+    hidden_layer: Vec<HiddenLayer>,
+    output_layer: OutputLayer,
 }
 
 impl Network {
-    pub fn new(input_layer: Layer, hidden_layer: Vec<Layer>, output_layer: Layer) -> Self {
+    pub fn new(
+        input_layer: InputLayer,
+        hidden_layer: Vec<HiddenLayer>,
+        output_layer: OutputLayer,
+    ) -> Self {
         Self {
             input_layer,
             hidden_layer,
@@ -22,19 +28,23 @@ impl Network {
         // for every value inside the input layer
         // get each hidden layer and calculate
         let mut layers = self.hidden_layer.iter();
+        
 
         for (i, layer) in layers.enumerate() {
             if i == 0 {
                 // feed the first layer
+                for neuron in layer.neurons.iter_mut() {
+                    
+                } 
             }
             println!("test");
             print!("{:?}", layer);
         }
     }
 
-    pub fn calc_values(l1: &mut Layer, l2: &mut Layer) {
-        for (i, target_neuron) in l2.0.iter().enumerate() {
-            for (j, source_neuron) in l1.0.iter().enumerate() {}
+    pub fn calc_values(l1: &mut HiddenLayer, l2: &mut HiddenLayer) {
+        for (i, target_neuron) in l2.neurons.iter().enumerate() {
+            for (j, source_neuron) in l1.neurons.iter().enumerate() {}
         }
     }
 }

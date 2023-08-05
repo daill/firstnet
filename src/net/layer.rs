@@ -1,50 +1,76 @@
-use crate::net::weight_functions::zero_value_init;
 use std::fmt;
 
 use crate::net::neuron::Neuron;
 
+pub(crate) trait Layer {}
+
 #[derive(Debug, Clone)]
-pub struct HiddenLayer {
-    nodes: Vec<Neuron>,
-    layer_size: i32,
+pub struct InputLayer {
+    pub inputs: Vec<f32>,
 }
 
-impl HiddenLayer {
-    pub fn new(layer_size: u32) -> Self {
-        let nodes: Vec<Neuron> = zero_value_init(layer_size);
-        let layer_size = nodes.len();
-        HiddenLayer { nodes, layer_size }
+impl Layer for InputLayer {}
+
+impl InputLayer {
+    fn from_inputs(inputs: Vec<f32>) -> Self {
+        Self { inputs }
     }
 
-    // returns the weight array of each node in an array
-    pub fn get_tensor(&self) -> [[f32]] {
-        return [[0.0; self.0.first().unwrap().len()]; self.0.len()];
+    pub fn new(layer_size: u32) -> Self {
+        Self {
+            inputs: vec![0.0; layer_size as usize],
+        }
     }
 }
 
 impl fmt::Display for InputLayer {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "nodes: {:?}\n", self.0)
+        write!(f, "neurons: {:?}\n", self.inputs)
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct InputLayer(pub Vec<Neuron>);
-
-impl InputLayer {
-    pub fn new(layer_size: u32) -> Self {
-        let nodes: Vec<Neuron> = zero_value_init(layer_size);
-        InputLayer(nodes)
-    }
+pub struct OutputLayer {
+    pub outputs: Vec<Neuron>,
 }
-
-#[derive(Debug, Clone)]
-pub struct OutputLayer(pub Vec<Neuron>);
 
 impl OutputLayer {
-    pub fn new(layer_size: u32) -> Self {
-        let nodes: Vec<Neuron> = zero_value_init(layer_size);
-        OutputLayer(nodes)
+    pub fn new(layer_size: u32, weights_size: u32) -> Self {
+        Self {
+            outputs: vec![Neuron::new(weights_size); layer_size.try_into().unwrap()],
+        }
+    }
+}
+
+impl fmt::Display for OutputLayer {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "neurons: {:?}\n", self.outputs)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct HiddenLayer {
+    pub neurons: Vec<Neuron>,
+}
+
+impl HiddenLayer {
+    pub fn new(layer_size: u32, weights_size: u32) -> Self {
+        let neurons: Vec<Neuron> = vec![Neuron::new(weights_size); layer_size.try_into().unwrap()];
+        Self { neurons }
+    }
+}
+
+impl HiddenLayer {
+    fn init(&mut self, f: fn(u32) -> Vec<f32>) {
+        self.neurons.iter_mut().for_each(|neuron| {
+            neuron.init(f);
+        });
+    }
+}
+
+impl fmt::Display for HiddenLayer {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "neurons: {:?}\n", self.neurons)
     }
 }
 
@@ -54,7 +80,7 @@ mod tests {
 
     #[test]
     fn layer_test() {
-        let a = Layer::new(5, 5);
+        let a = HiddenLayer::new(5, 5);
         println!("{:?}", a);
         assert_eq!(1, 0);
     }
