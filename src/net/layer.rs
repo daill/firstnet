@@ -1,3 +1,4 @@
+use ndarray::prelude::*;
 use std::fmt;
 
 use crate::net::neuron::Neuron;
@@ -6,19 +7,19 @@ pub(crate) trait Layer {}
 
 #[derive(Debug, Clone)]
 pub struct InputLayer {
-    pub inputs: Vec<f32>,
+    pub inputs: Array1<f32>,
 }
 
 impl Layer for InputLayer {}
 
 impl InputLayer {
-    fn from_inputs(inputs: Vec<f32>) -> Self {
+    fn from_inputs(inputs: Array1<f32>) -> Self {
         Self { inputs }
     }
 
     pub fn new(layer_size: u32) -> Self {
         Self {
-            inputs: vec![0.0; layer_size as usize],
+            inputs: Array1::zeros(layer_size as usize),
         }
     }
 }
@@ -61,7 +62,7 @@ impl HiddenLayer {
 }
 
 impl HiddenLayer {
-    fn init(&mut self, f: fn(u32) -> Vec<f32>) {
+    fn init(&mut self, f: fn(u32) -> Array1<f32>) {
         self.neurons.iter_mut().for_each(|neuron| {
             neuron.init(f);
         });

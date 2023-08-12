@@ -28,14 +28,11 @@ impl Network {
         // for every value inside the input layer
         // get each hidden layer and calculate
         let mut layers = self.hidden_layer.iter();
-        
 
         for (i, layer) in layers.enumerate() {
             if i == 0 {
                 // feed the first layer
-                for neuron in layer.neurons.iter_mut() {
-                    
-                } 
+                for &mut neuron in layer.neurons.iter_mut() {}
             }
             println!("test");
             print!("{:?}", layer);
