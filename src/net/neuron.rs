@@ -3,8 +3,8 @@ use std::fmt;
 
 #[derive(Clone, Debug)]
 pub struct Neuron {
-    value: f32,
-    weights: Array1<f32>,
+    pub value: f32,
+    pub weights: Array1<f32>,
 }
 
 impl Neuron {

@@ -24,18 +24,21 @@ impl Network {
         }
     }
 
-    pub fn feed_forward(&self) {
+    pub fn feed_forward(&mut self) {
         // for every value inside the input layer
         // get each hidden layer and calculate
-        let mut layers = self.hidden_layer.iter();
 
-        for (i, layer) in layers.enumerate() {
-            if i == 0 {
-                // feed the first layer
-                for &mut neuron in layer.neurons.iter_mut() {}
-            }
+        let input = &self.input_layer;
+        let mut layer = self.hidden_layer.get_mut(0).unwrap();
+        // feed the first layer
+        for n in 0..layer.neurons.len() {
+            let mut neuron = layer.neurons.get_mut(n).unwrap();
+            neuron.value = input.inputs.dot(&neuron.weights);
+        }
+
+        for i in 1..self.hidden_layer.len() {
             println!("test");
-            print!("{:?}", layer);
+            print!("{:?}", self.hidden_layer[i]);
         }
     }
 
