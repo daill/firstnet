@@ -1,7 +1,7 @@
 use ndarray::prelude::*;
 use std::fmt;
 
-trait Element {}
+pub trait Element {}
 
 #[derive(Clone, Debug)]
 pub struct Neuron {

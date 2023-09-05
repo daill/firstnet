@@ -9,7 +9,7 @@ pub(crate) trait Layer {
 
 #[derive(Debug, Clone)]
 pub struct InputLayer {
-    pub inputs: Array1<Element>,
+    pub inputs: Array1<dyn Element>,
 }
 
 impl Layer for InputLayer {
@@ -19,7 +19,7 @@ impl Layer for InputLayer {
 }
 
 impl InputLayer {
-    fn from_inputs(inputs: Array1<Element>) -> Self {
+    fn from_inputs(inputs: Array1<dyn Element>) -> Self {
         Self { inputs }
     }
 
@@ -40,7 +40,7 @@ impl fmt::Display for InputLayer {
 
 #[derive(Debug, Clone)]
 pub struct OutputLayer {
-    pub outputs: Vec<Element>,
+    pub outputs: Vec<dyn Element>,
     pub activation_function: fn(f32) -> f32,
 }
 
@@ -51,8 +51,9 @@ impl OutputLayer {
         weight_function: fn(u32) -> Array1<f32>,
         prev_layer: &dyn Layer,
     ) -> Self {
-        let weights = weight_function(prev_layer.neurons.len());
-        let mut outputs: Vec<Element> = vec![Neuron::new(weights); layer_size.try_into().unwrap()];
+        let weights = weight_function(prev_layer.get_weights_size());
+        let mut outputs: Vec<dyn Element> =
+            vec![Neuron::new(weights); layer_size.try_into().unwrap()];
         Self {
             outputs: vec![Neuron::new(weights); layer_size.try_into().unwrap()],
             activation_function,
@@ -70,7 +71,7 @@ impl fmt::Display for OutputLayer {
 
 #[derive(Debug, Clone)]
 pub struct HiddenLayer {
-    pub neurons: Vec<Element>,
+    pub neurons: Vec<dyn Element>,
     pub activation_function: fn(f32) -> f32,
     pub bias: bool,
 }
@@ -84,7 +85,8 @@ impl HiddenLayer {
         prev_layer: &dyn Layer,
     ) -> Self {
         let weights = weight_function(prev_layer.get_weights_size());
-        let mut neurons: Vec<Element> = vec![Neuron::new(weights); layer_size.try_into().unwrap()];
+        let mut neurons: Vec<dyn Element> =
+            vec![Neuron::new(weights); layer_size.try_into().unwrap()];
         if bias {
             neurons.push(Bias::new());
         }
