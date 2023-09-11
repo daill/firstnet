@@ -52,15 +52,20 @@ impl OutputLayer {
         prev_layer: &dyn Layer,
     ) -> Self {
         let weights = weight_function(prev_layer.get_weights_size());
-        let mut outputs: Vec<Neuron> = vec![Neuron::new(weights); layer_size.try_into().unwrap()];
+        let mut outputs: Vec<Neuron> =
+            vec![Neuron::Output::new(weights); layer_size.try_into().unwrap()];
         Self {
-            outputs: vec![Neuron::new(weights); layer_size.try_into().unwrap()],
+            outputs: vec![Neuron::Output::new(weights); layer_size.try_into().unwrap()],
             activation_function,
         }
     }
 }
 
-impl Layer for OutputLayer {}
+impl Layer for OutputLayer {
+    fn get_weights_size(&self) -> u32 {
+        self.outputs.len().try_into().unwrap()
+    }
+}
 
 impl fmt::Display for OutputLayer {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -85,9 +90,9 @@ impl HiddenLayer {
     ) -> Self {
         let weights = weight_function(prev_layer.get_weights_size());
         let mut neurons: Vec<Neuron> =
-            vec![Neuron::new(weights, NeuronKind::Neuron); layer_size.try_into().unwrap()];
+            vec![Neuron::Hidden::new(weights); layer_size.try_into().unwrap()];
         if bias {
-            neurons.push(Neuron::new(weights, NeuronKind::Bias));
+            neurons.push(Neuron::Hidden::new(weights));
         }
         Self {
             neurons,
@@ -99,7 +104,7 @@ impl HiddenLayer {
 
 impl Layer for HiddenLayer {
     fn get_weights_size(&self) -> u32 {
-        self.neurons.len()
+        self.neurons.len().try_into().unwrap()
     }
 }
 
