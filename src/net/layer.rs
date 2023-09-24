@@ -3,8 +3,11 @@ use std::fmt;
 
 use crate::net::neuron::Neuron;
 
-pub(crate) trait Layer {
+use super::neuron::{Bias, Hidden, Input, Output};
+
+pub trait Layer {
     fn get_weights_size(&self) -> u32;
+    fn get_values_as_arr(&self) -> Array1<f32>;
 }
 
 #[derive(Debug, Clone)]
@@ -16,6 +19,18 @@ impl Layer for InputLayer {
     fn get_weights_size(&self) -> u32 {
         self.inputs.len().try_into().unwrap()
     }
+
+    fn get_values_as_arr(&self) -> Array1<f32> {
+        Array1::from_vec(
+            self.inputs
+                .iter()
+                .map(|n| match n {
+                    Neuron::Input(i) => i.value,
+                    _ => 0.0,
+                })
+                .collect(),
+        )
+    }
 }
 
 impl InputLayer {
@@ -24,11 +39,22 @@ impl InputLayer {
     }
 
     pub fn new(mut layer_size: u32, bias: bool) -> Self {
-        let mut inputs = vec![Neuron::Input::new(); layer_size.try_into().unwrap()];
+        let mut inputs = vec![Neuron::Input(Input { value: 0.0 }); layer_size.try_into().unwrap()];
         if bias {
-            inputs.push(Neuron::Bias::new());
+            inputs.push(Neuron::Bias(Bias { value: 1.0 }));
         }
-        Self { inputs }
+        Self {
+            inputs: Array1::from_vec(inputs),
+        }
+    }
+
+    pub fn set_inputs(&mut self, input_values: Vec<f32>) {
+        self.inputs = Array1::from_vec(
+            input_values
+                .into_iter()
+                .map(|n| Neuron::Input(Input { value: n }))
+                .collect(),
+        );
     }
 }
 
@@ -52,10 +78,15 @@ impl OutputLayer {
         prev_layer: &dyn Layer,
     ) -> Self {
         let weights = weight_function(prev_layer.get_weights_size());
-        let mut outputs: Vec<Neuron> =
-            vec![Neuron::Output::new(weights); layer_size.try_into().unwrap()];
+        let mut outputs: Vec<Neuron> = vec![
+            Neuron::Output(Output {
+                value: 0.0,
+                weights
+            });
+            layer_size.try_into().unwrap()
+        ];
         Self {
-            outputs: vec![Neuron::Output::new(weights); layer_size.try_into().unwrap()],
+            outputs,
             activation_function,
         }
     }
@@ -64,6 +95,18 @@ impl OutputLayer {
 impl Layer for OutputLayer {
     fn get_weights_size(&self) -> u32 {
         self.outputs.len().try_into().unwrap()
+    }
+
+    fn get_values_as_arr(&self) -> Array1<f32> {
+        Array1::from_vec(
+            self.outputs
+                .iter()
+                .map(|n| match n {
+                    Neuron::Input(i) => i.value,
+                    _ => 0.0,
+                })
+                .collect(),
+        )
     }
 }
 
@@ -89,10 +132,15 @@ impl HiddenLayer {
         prev_layer: &dyn Layer,
     ) -> Self {
         let weights = weight_function(prev_layer.get_weights_size());
-        let mut neurons: Vec<Neuron> =
-            vec![Neuron::Hidden::new(weights); layer_size.try_into().unwrap()];
+        let mut neurons: Vec<Neuron> = vec![
+            Neuron::Hidden(Hidden {
+                value: 0.0,
+                weights
+            });
+            layer_size.try_into().unwrap()
+        ];
         if bias {
-            neurons.push(Neuron::Hidden::new(weights));
+            neurons.push(Neuron::Bias(Bias { value: 1.0 }));
         }
         Self {
             neurons,
@@ -105,6 +153,18 @@ impl HiddenLayer {
 impl Layer for HiddenLayer {
     fn get_weights_size(&self) -> u32 {
         self.neurons.len().try_into().unwrap()
+    }
+
+    fn get_values_as_arr(&self) -> Array1<f32> {
+        Array1::from_vec(
+            self.neurons
+                .iter()
+                .map(|n| match n {
+                    Neuron::Input(i) => i.value,
+                    _ => 0.0,
+                })
+                .collect(),
+        )
     }
 }
 

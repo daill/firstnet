@@ -3,10 +3,10 @@ use std::fmt;
 
 #[derive(Clone, Debug)]
 pub enum Neuron {
-    Input,
-    Bias,
-    Hidden,
-    Output,
+    Input(Input),
+    Bias(Bias),
+    Hidden(Hidden),
+    Output(Output),
 }
 
 #[derive(Clone, Debug)]
@@ -82,12 +82,8 @@ impl fmt::Display for Output {
 }
 
 impl Bias {
-    pub fn new(weights: Array1<f32>) -> Bias {
+    pub fn new() -> Bias {
         Bias { value: 1.0 }
-    }
-
-    pub fn init(&mut self, f: fn(u32) -> Array1<f32>) {
-        self.weights = f(self.weights.len().try_into().unwrap());
     }
 }
 

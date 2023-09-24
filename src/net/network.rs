@@ -1,8 +1,12 @@
 use std::fmt;
 
 use crate::net::layer::Layer;
+use itertools::Itertools;
 
-use super::layer::{HiddenLayer, InputLayer, OutputLayer};
+use super::{
+    layer::{HiddenLayer, InputLayer, OutputLayer},
+    neuron::{Bias, Hidden, Neuron},
+};
 
 #[derive(Debug, Clone)]
 pub struct Network {
@@ -25,19 +29,44 @@ impl Network {
     }
 
     pub fn feed_forward(&mut self) {
-        self.pre_flight_check();
         // for every value inside the input layer
         // get each hidden layer and calculate
 
         let input = &self.input_layer;
-        let mut layer = self.hidden_layer.get_mut(0).unwrap();
+        let mut hidden = self.hidden_layer;
+        let hidden_len = hidden.len();
+        let first_layer = hidden.get_mut(0).unwrap();
+        let inputs = input.get_values_as_arr();
         // feed the first layer
-        for n in 0..layer.neurons.len() {
-            let mut neuron = layer.neurons.get_mut(n).unwrap();
-            let cal_val = input.inputs.dot(&neuron.weights);
-            neuron.value = (layer.activation_function)(cal_val);
+        for n in 0..first_layer.neurons.len() {
+            let neuron = first_layer.neurons.get_mut(n).unwrap();
+            match neuron {
+                Neuron::Hidden(h) => {
+                    let cal_val = inputs.dot(&h.weights);
+                    h.value = (first_layer.activation_function)(cal_val);
+                }
+                _ => {}
+            };
         }
 
+        if hidden_len > 1 {
+            let iter = (0..hidden_len - 1).into_iter();
+            for (prev, next) in iter.tuple_windows() {
+                let prev_layer = hidden.get(prev).unwrap();
+                let mut next_layer = self.hidden_layer.get_mut(next).unwrap();
+                let values = prev_layer.get_values_as_arr();
+                for n in 0..next_layer.neurons.len() {
+                    let mut neuron = next_layer.neurons.get_mut(n).unwrap();
+                    match neuron {
+                        Neuron::Hidden(h) => {
+                            let cal_val = values.dot(&h.weights);
+                            h.value = (first_layer.activation_function)(cal_val);
+                        }
+                        _ => {}
+                    }
+                }
+            }
+        }
         for i in 1..self.hidden_layer.len() {
             println!("test");
             print!("{:?}", self.hidden_layer[i]);
@@ -47,21 +76,6 @@ impl Network {
     pub fn calc_values(l1: &mut HiddenLayer, l2: &mut HiddenLayer) {
         for (i, target_neuron) in l2.neurons.iter().enumerate() {
             for (j, source_neuron) in l1.neurons.iter().enumerate() {}
-        }
-    }
-
-    fn pre_flight_check(self) {
-        if self.input_layer.inputs.len()
-            != self.hidden_layer[0].neurons.first().unwrap().weights.len()
-        {
-            panic!("invalid input layer size");
-        }
-        for n in 1..self.hidden_layer.len() {
-            if self.hidden_layer[n].neurons.first().unwrap().weights.len()
-                != self.hidden_layer[n - 1].neurons.len()
-            {
-                panic!("invalid hidden layer size");
-            }
         }
     }
 }
@@ -86,15 +100,17 @@ mod tests {
 
     #[test]
     fn network_feed_forward_test() {
-        let mut input_layer = InputLayer::new(2);
-        input_layer.inputs = array![1.0, 1.0];
-        let mut hidden_a = HiddenLayer::new(5, 2, activation_functions::sigmoid);
-        hidden_a.init(xavier_init);
-        let mut net = Network::new(
-            input_layer,
-            vec![hidden_a],
-            OutputLayer::new(2, 2, activation_functions::sigmoid),
+        let mut input_layer = InputLayer::new(2, true);
+        input_layer.set_inputs(vec![1.0, 1.0]);
+        let mut hidden_a = HiddenLayer::new(
+            5,
+            true,
+            activation_functions::sigmoid,
+            xavier_init,
+            &input_layer,
         );
+        let mut output = OutputLayer::new(2, activation_functions::sigmoid, xavier_init, &hidden_a);
+        let mut net = Network::new(input_layer, vec![hidden_a], output);
         net.feed_forward();
         println!("{:?}", &net.hidden_layer[0]);
         assert_eq!(1, 0);
