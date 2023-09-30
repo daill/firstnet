@@ -33,36 +33,39 @@ impl Network {
         // get each hidden layer and calculate
 
         let input = &self.input_layer;
-        let mut hidden = self.hidden_layer;
-        let hidden_len = hidden.len();
-        let first_layer = hidden.get_mut(0).unwrap();
         let inputs = input.get_values_as_arr();
         // feed the first layer
-        for n in 0..first_layer.neurons.len() {
-            let neuron = first_layer.neurons.get_mut(n).unwrap();
-            match neuron {
-                Neuron::Hidden(h) => {
-                    let cal_val = inputs.dot(&h.weights);
-                    h.value = (first_layer.activation_function)(cal_val);
-                }
-                _ => {}
-            };
+        {
+            let first_layer = self.hidden_layer.get_mut(0).unwrap();
+            for n in 0..first_layer.neurons.len() {
+                let neuron = first_layer.neurons.get_mut(n).unwrap();
+                match neuron {
+                    Neuron::Hidden(h) => {
+                        let cal_val = inputs.dot(&h.weights);
+                        h.value = (first_layer.activation_function)(cal_val);
+                    }
+                    _ => {}
+                };
+            }
         }
 
-        if hidden_len > 1 {
-            let iter = (0..hidden_len - 1).into_iter();
-            for (prev, next) in iter.tuple_windows() {
-                let prev_layer = hidden.get(prev).unwrap();
-                let mut next_layer = self.hidden_layer.get_mut(next).unwrap();
-                let values = prev_layer.get_values_as_arr();
-                for n in 0..next_layer.neurons.len() {
-                    let mut neuron = next_layer.neurons.get_mut(n).unwrap();
-                    match neuron {
-                        Neuron::Hidden(h) => {
-                            let cal_val = values.dot(&h.weights);
-                            h.value = (first_layer.activation_function)(cal_val);
+        {
+            let hidden_layers = &mut self.hidden_layer;
+            if (hidden_layers).len() > 1 {
+                let iter = (0..hidden_layers.len() - 1).into_iter();
+                for (prev, next) in iter.tuple_windows() {
+                    let prev_layer = hidden_layers[prev];
+                    let next_layer = &mut hidden_layers[next];
+                    let values = prev_layer.get_values_as_arr();
+                    for n in 0..next_layer.neurons.len() {
+                        let neuron = next_layer.neurons.get_mut(n).unwrap();
+                        match neuron {
+                            Neuron::Hidden(h) => {
+                                let cal_val = values.dot(&h.weights);
+                                //h.value = (hidden_layers.get(0).unwrap().activation_function)(cal_val);
+                            }
+                            _ => {}
                         }
-                        _ => {}
                     }
                 }
             }
