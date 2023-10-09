@@ -2,6 +2,7 @@ use std::fmt;
 
 use crate::net::layer::Layer;
 use itertools::Itertools;
+use ndarray::{Array0, ArrayBase};
 
 use super::{
     layer::{HiddenLayer, InputLayer, OutputLayer},
@@ -35,52 +36,60 @@ impl Network {
         let input = &self.input_layer;
         let inputs = input.get_values_as_arr();
         // feed the first layer
-        {
-            let first_layer = self.hidden_layer.get_mut(0).unwrap();
-            for n in 0..first_layer.neurons.len() {
-                let neuron = first_layer.neurons.get_mut(n).unwrap();
-                match neuron {
-                    Neuron::Hidden(h) => {
-                        let cal_val = inputs.dot(&h.weights);
-                        h.value = (first_layer.activation_function)(cal_val);
-                    }
-                    _ => {}
-                };
-            }
+        let first_layer = self.hidden_layer.get_mut(0).unwrap();
+        for n in 0..first_layer.neurons.len() {
+            let neuron = first_layer.neurons.get_mut(n).unwrap();
+            if let Neuron::Hidden(h) = neuron {
+                let cal_val = inputs.dot(&h.weights);
+                h.value = (first_layer.activation_function)(cal_val);
+            };
         }
 
-        {
-            let hidden_layers = &mut self.hidden_layer;
-            if (hidden_layers).len() > 1 {
-                let iter = (0..hidden_layers.len() - 1).into_iter();
-                for (prev, next) in iter.tuple_windows() {
-                    let prev_layer = hidden_layers[prev];
-                    let next_layer = &mut hidden_layers[next];
-                    let values = prev_layer.get_values_as_arr();
-                    for n in 0..next_layer.neurons.len() {
-                        let neuron = next_layer.neurons.get_mut(n).unwrap();
-                        match neuron {
-                            Neuron::Hidden(h) => {
-                                let cal_val = values.dot(&h.weights);
-                                //h.value = (hidden_layers.get(0).unwrap().activation_function)(cal_val);
-                            }
-                            _ => {}
-                        }
+        let hidden_layers = &mut self.hidden_layer;
+        if (hidden_layers).len() > 1 {
+            let iter = (0..hidden_layers.len() - 1).into_iter();
+            for (prev, next) in iter.tuple_windows() {
+                let prev_layer = hidden_layers.get(prev).unwrap();
+                let values = prev_layer.get_values_as_arr();
+                let next_layer = &mut hidden_layers[next];
+                for n in 0..next_layer.neurons.len() {
+                    let neuron = next_layer.neurons.get_mut(n).unwrap();
+                    if let Neuron::Hidden(h) = neuron {
+                        let cal_val = values.dot(&h.weights);
+                        h.value = (next_layer.activation_function)(cal_val);
                     }
                 }
             }
         }
+
+        let output_layer = &mut self.output_layer;
+        let last_hidden = hidden_layers.last().unwrap();
+        let layer_values = last_hidden.get_values_as_arr();
+        for n in 0..output_layer.outputs.len() {
+            let neuron = output_layer.outputs.get_mut(n).unwrap();
+
+            if let Neuron::Output(o) = neuron {
+                let cal_val = layer_values.dot(&o.weights);
+                o.value = (output_layer.activation_function)(cal_val);
+            }
+        }
+
         for i in 1..self.hidden_layer.len() {
             println!("test");
             print!("{:?}", self.hidden_layer[i]);
         }
     }
 
-    pub fn calc_values(l1: &mut HiddenLayer, l2: &mut HiddenLayer) {
-        for (i, target_neuron) in l2.neurons.iter().enumerate() {
-            for (j, source_neuron) in l1.neurons.iter().enumerate() {}
+    pub fn calc_total_error(&mut self, &values: Array1<f32>, &expected: Array1<f32>) -> f32 {
+        let mut error = 0.0;
+        for n in 0..&values.len() {
+            error += 0.5 * (values[n] - expected[n]).pow(2);
         }
+
+        return error;
     }
+
+    pub fn calc_
 }
 
 impl fmt::Display for Network {
@@ -112,7 +121,7 @@ mod tests {
             xavier_init,
             &input_layer,
         );
-        let mut output = OutputLayer::new(2, activation_functions::sigmoid, xavier_init, &hidden_a);
+        let mut output = OutputLayer::new(1, activation_functions::sigmoid, xavier_init, &hidden_a);
         let mut net = Network::new(input_layer, vec![hidden_a], output);
         net.feed_forward();
         println!("{:?}", &net.hidden_layer[0]);
