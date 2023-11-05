@@ -31,6 +31,39 @@ pub struct Output {
     pub weights: Array1<f32>,
 }
 
+impl TryFrom<Neuron> for Input {
+    type Error = Neuron;
+
+    fn try_from(other: Neuron) -> Result<Self, Self::Error> {
+        match other {
+            Neuron::Input(c) => Ok(c),
+            a => Err(a),
+        }
+    }
+}
+
+impl TryFrom<Neuron> for Hidden {
+    type Error = Neuron;
+
+    fn try_from(other: Neuron) -> Result<Self, Self::Error> {
+        match other {
+            Neuron::Hidden(c) => Ok(c),
+            a => Err(a),
+        }
+    }
+}
+
+impl TryFrom<Neuron> for Output {
+    type Error = Neuron;
+
+    fn try_from(other: Neuron) -> Result<Self, Self::Error> {
+        match other {
+            Neuron::Output(c) => Ok(c),
+            a => Err(a),
+        }
+    }
+}
+
 impl Input {
     pub fn new(weights: Array1<f32>) -> Input {
         Input { value: 0.0 }

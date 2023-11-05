@@ -1,4 +1,3 @@
-
 /*
  * Regression - Linear Activation Function
  * Binary Classification—Sigmoid/Logistic Activation Function
@@ -6,12 +5,10 @@
  * Multilabel Classification—Sigmoid
  */
 
-
 // should not be used in hidden layers
 pub fn sigmoid(x: f32) -> f32 {
     1.0 / (1.0 + (-x).exp())
 }
-
 
 pub fn tanh(x: f32) -> f32 {
     (1.0 - (-x).exp()) / (1.0 + (-x).exp())
@@ -39,3 +36,6 @@ pub fn swish(x: f32) -> f32 {
     x * sigmoid(x)
 }
 
+pub fn nop(x: f32) -> f32 {
+    x
+}

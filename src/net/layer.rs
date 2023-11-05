@@ -160,7 +160,7 @@ impl Layer for HiddenLayer {
             self.neurons
                 .iter()
                 .map(|n| match n {
-                    Neuron::Input(i) => i.value,
+                    Neuron::Hidden(i) => i.value,
                     _ => 0.0,
                 })
                 .collect(),
