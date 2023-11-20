@@ -25,7 +25,7 @@ impl Layer for InputLayer {
             self.inputs
                 .iter()
                 .map(|n| match n {
-                    Neuron::Input(i) => i.value,
+                    Neuron::Input(i) => i.output_value,
                     _ => 0.0,
                 })
                 .collect(),

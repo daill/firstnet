@@ -11,24 +11,30 @@ pub enum Neuron {
 
 #[derive(Clone, Debug)]
 pub struct Input {
-    pub value: f32,
+    pub input_value: f32,
+    pub output_value: f32,
 }
 
 #[derive(Clone, Debug)]
 pub struct Hidden {
-    pub value: f32,
+    pub input_value: f32,
+    pub output_value: f32,
     pub weights: Array1<f32>,
+    pub delta: Array1<f32>,
 }
 
 #[derive(Clone, Debug)]
 pub struct Bias {
-    pub value: f32,
+    pub input_value: f32,
+    pub output_value: f32,
 }
 
 #[derive(Clone, Debug)]
 pub struct Output {
-    pub value: f32,
+    pub input_value: f32,
+    pub output_value: f32,
     pub weights: Array1<f32>,
+    pub delta: Array1<f32>,
 }
 
 impl TryFrom<Neuron> for Input {
@@ -66,21 +72,30 @@ impl TryFrom<Neuron> for Output {
 
 impl Input {
     pub fn new(weights: Array1<f32>) -> Input {
-        Input { value: 0.0 }
+        Input {
+            input_value: 0.0,
+            output_value: 0.0,
+        }
     }
 }
 
 impl fmt::Display for Input {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "value: {}", self.value)
+        write!(
+            f,
+            "input_value: {}, output_value: {}",
+            self.input_value, self.output_value
+        )
     }
 }
 
 impl Hidden {
     pub fn new(weights: Array1<f32>) -> Hidden {
         Hidden {
-            value: 0.0,
+            input_value: 0.0,
+            output_value: 0.0,
             weights,
+            delta: Array1::zeros(weights.len().try_into().unwrap()),
         }
     }
 
@@ -91,15 +106,21 @@ impl Hidden {
 
 impl fmt::Display for Hidden {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "value: {}", self.value)
+        write!(
+            f,
+            "input_value: {}, output_value: {}",
+            self.input_value, self.output_value
+        )
     }
 }
 
 impl Output {
     pub fn new(weights: Array1<f32>) -> Output {
         Output {
-            value: 0.0,
+            input_value: 0.0,
+            output_value: 0.0,
             weights,
+            delta: Array1::zeros(weights.len().try_into().unwrap()),
         }
     }
 
@@ -110,18 +131,29 @@ impl Output {
 
 impl fmt::Display for Output {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "value: {}", self.value)
+        write!(
+            f,
+            "input_value: {}, output_value: {}",
+            self.input_value, self.output_value
+        )
     }
 }
 
 impl Bias {
     pub fn new() -> Bias {
-        Bias { value: 1.0 }
+        Bias {
+            input_value: 0.0,
+            output_value: 1.0,
+        }
     }
 }
 
 impl fmt::Display for Bias {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "value: {}", self.value)
+        write!(
+            f,
+            "input_value: {}, output_value: {}",
+            self.input_value, self.output_value
+        )
     }
 }

@@ -42,8 +42,8 @@ impl Network {
         for n in 0..first_layer.neurons.len() {
             let mut neuron = first_layer.neurons.get_mut(n).unwrap();
             if let Neuron::Hidden(h) = neuron {
-                let cal_val = inputs.dot(&h.weights);
-                h.value = (first_layer.activation_function)(cal_val);
+                h.input_value = inputs.dot(&h.weights);
+                h.output_value = (first_layer.activation_function)(cal_val);
             };
         }
 
@@ -57,8 +57,8 @@ impl Network {
                 for n in 0..next_layer.neurons.len() {
                     let mut neuron = next_layer.neurons.get_mut(n).unwrap();
                     if let Neuron::Hidden(h) = neuron {
-                        let cal_val = values.dot(&h.weights);
-                        h.value = (next_layer.activation_function)(cal_val);
+                        h.input_value = values.dot(&h.weights);
+                        h.output_value = (next_layer.activation_function)(cal_val);
                     }
                 }
             }
@@ -71,8 +71,8 @@ impl Network {
             let neuron = output_layer.outputs.get_mut(n).unwrap();
 
             if let Neuron::Output(o) = neuron {
-                let cal_val = layer_values.dot(&o.weights);
-                o.value = (output_layer.activation_function)(cal_val);
+                o.input_value = layer_values.dot(&o.weights);
+                o.output_value = (output_layer.activation_function)(cal_val);
             }
         }
 
@@ -84,6 +84,7 @@ impl Network {
     }
 
     pub fn backward_pass(&mut self) {
+        let learning_rate = 0.05;
         let mut output_layer = &mut self.output_layer;
         let last_hidden = self.hidden_layer.last_mut().unwrap();
         for n in 0..output_layer.outputs.len() {
@@ -98,7 +99,8 @@ impl Network {
                         _ => panic!(),
                     };
 
-                    neuron_weights[i] = neuron_weights.get(i).unwrap() - 0.05 * (-0.809) * nn.value;
+                    neuron_weights[i] =
+                        neuron_weights.get(i).unwrap() - learning_rate * (-0.809) * nn.output_value;
                 }
             }
         }
@@ -107,13 +109,43 @@ impl Network {
             let mut hidden_layer = self.hidden_layer.get_mut(i).unwrap();
             for n in 0..hidden_layer.neurons.len() {
                 let mut neuron = hidden_layer.neurons.get_mut(n).unwrap();
+                let n_weight = self
+                    .hidden_layer
+                    .get(n + 1)
+                    .unwrap()
+                    .neurons
+                    .get(n)
+                    .unwrap()
+                    .weights[n];
                 if let Neuron::Hidden(h) = neuron {
                     let neuron_weights = &mut h.weights;
-                    for i in 0..neuron_weights.len() {
-                        let input_neuron = self.input_layer.neurons.get(i).unwrap();
-                    }
+                    for i in 0..neuron_weights.len() {}
                 }
             }
+        }
+    }
+
+    fn get_prev_weight(&self, layer: &impl Layer, nindex: usize, windex: usize) -> f32 {
+        match layer {
+            HiddenLayer(l) => {
+                l.neurons
+                    .get(nindex)
+                    .unwrap()
+                    .weights
+                    .get(windex)
+                    .unwrap()
+                    .value
+            }
+            OutputLayer(l) => {
+                l.neurons
+                    .get(nindex)
+                    .unwrap()
+                    .weights
+                    .get(windex)
+                    .unwrap()
+                    .value
+            }
+            _ => 0.0,
         }
     }
 
@@ -205,4 +237,4 @@ mod tests {
         println!("{:?}", &net);
         assert_eq!(1, 0);
     }
-}
+
