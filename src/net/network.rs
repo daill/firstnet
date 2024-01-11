@@ -84,7 +84,9 @@ impl Network {
     }
 
     pub fn backward_pass(&mut self) {
+        // 
         let learning_rate = 0.05;
+
         let mut output_layer = &mut self.output_layer;
         let last_hidden = self.hidden_layer.last_mut().unwrap();
         for n in 0..output_layer.outputs.len() {
@@ -181,7 +183,6 @@ mod tests {
 
     fn setup() -> Network {
         let mut input_layer = InputLayer::new(2, true);
-        input_layer.set_inputs(vec![2.0, 3.0]);
         let mut hidden_a = HiddenLayer::new(
             2,
             true,
@@ -211,6 +212,7 @@ mod tests {
     #[test]
     fn network_feed_forward_test() {
         let mut net = setup();
+        net.input_layer.set_inputs(vec![2.0, 3.0]);
         net.feed_forward();
 
         println!("{:?}", &net.input_layer);
@@ -230,6 +232,7 @@ mod tests {
     #[test]
     fn network_backward_pass_test() {
         let mut net = setup();
+        net.input_layer.set_inputs(vec![2.0, 3.0]);
         net.feed_forward();
 
         net.backward_pass();
