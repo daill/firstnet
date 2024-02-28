@@ -83,7 +83,10 @@ impl Network {
         println!("{:?}", output_layer);
     }
 
-    pub fn backward_pass(&mut self) {
+
+
+
+    pub fn backward_pass(&mut self, expected: &Array1<f32>) {
         // 
         let learning_rate = 0.05;
 
@@ -91,19 +94,14 @@ impl Network {
         let last_hidden = self.hidden_layer.last_mut().unwrap();
         for n in 0..output_layer.outputs.len() {
             let mut outputs = &mut output_layer.outputs;
-            let output_neuron = outputs.get_mut(n).unwrap();
-            if let Neuron::Output(neuron) = output_neuron {
-                let neuron_weights = &mut neuron.weights;
+            let neuron = outputs.get_mut(n).unwrap();
+            if let Neuron::Output(output_neuron) = neuron {
+                let neuron_weights = &mut output_neuron.weights;
+                let neuron_deltas = &mut output_neuron.deltas;
+                let delta = output_neuron.output_value - expected[n];
                 for i in 0..neuron_weights.len() {
-                    let hidden_neuron = last_hidden.neurons.get_mut(i).unwrap();
-                    let nn = match hidden_neuron {
-                        Neuron::Hidden(h) => h,
-                        _ => panic!(),
-                    };
+                    
 
-                    neuron_weights[i] =
-                        neuron_weights.get(i).unwrap() - learning_rate * (-0.809) * nn.output_value;
-                }
             }
         }
 
@@ -240,4 +238,4 @@ mod tests {
         println!("{:?}", &net);
         assert_eq!(1, 0);
     }
-
+}
