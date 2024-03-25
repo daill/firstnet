@@ -9,6 +9,8 @@ pub enum Neuron {
     Output(Output),
 }
 
+
+
 #[derive(Clone, Debug)]
 pub struct Input {
     pub input_value: f32,
@@ -20,7 +22,6 @@ pub struct Hidden {
     pub input_value: f32,
     pub output_value: f32,
     pub weights: Array1<f32>,
-    pub deltas: Array1<f32>,
 }
 
 #[derive(Clone, Debug)]
@@ -34,7 +35,6 @@ pub struct Output {
     pub input_value: f32,
     pub output_value: f32,
     pub weights: Array1<f32>,
-    pub deltas: Array1<f32>,
 }
 
 impl TryFrom<Neuron> for Input {
@@ -95,7 +95,6 @@ impl Hidden {
             input_value: 0.0,
             output_value: 0.0,
             weights,
-            deltas: Array1::zeros(weights.len().try_into().unwrap()),
         }
     }
 
@@ -120,7 +119,6 @@ impl Output {
             input_value: 0.0,
             output_value: 0.0,
             weights,
-            deltas: Array1::zeros(weights.len().try_into().unwrap()),
         }
     }
 

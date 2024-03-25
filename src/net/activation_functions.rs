@@ -10,8 +10,16 @@ pub fn sigmoid(x: f32) -> f32 {
     1.0 / (1.0 + (-x).exp())
 }
 
+pub fn sigmoid_derivative(x: f32) -> f32 {
+    x * (1.0 - x)
+}
+
 pub fn tanh(x: f32) -> f32 {
     (1.0 - (-x).exp()) / (1.0 + (-x).exp())
+}
+
+pub fn tanh_derivative(x: f32) -> f32 {
+    1.0 - x * x
 }
 
 // should only be used in hidden layer
@@ -38,4 +46,8 @@ pub fn swish(x: f32) -> f32 {
 
 pub fn nop(x: f32) -> f32 {
     x
+}
+
+pub fn nop_derivative(x: f32) -> f32 {
+    1.0
 }
