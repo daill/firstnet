@@ -32,7 +32,7 @@ impl Network {
         }
     }
 
-    pub fn feed_forward(&mut self) {
+    pub fn forward_pass(&mut self) {
         // for every value inside the input layer
         // get each hidden layer and calculate
 
@@ -50,7 +50,7 @@ impl Network {
 
         let hidden_layers = &mut self.hidden_layer;
         if (hidden_layers).len() > 1 {
-            let iter = (0..hidden_layers.len() - 1).into_iter();
+            let iter = (1..hidden_layers.len() - 1).into_iter();
             for (prev, next) in iter.tuple_windows() {
                 let prev_layer = hidden_layers.get(prev).unwrap();
                 let values = prev_layer.values_as_arr();
@@ -78,7 +78,7 @@ impl Network {
         }
 
         println!("{:?}", self.input_layer);
-        for i in 1..self.hidden_layer.len() {
+        for i in 0..self.hidden_layer.len() {
             println!("{:?}", self.hidden_layer[i]);
         }
         println!("{:?}", output_layer);
@@ -108,7 +108,8 @@ impl Network {
 
         for i in (self.hidden_layer.len()-1)..0 {
             let mut hidden_layer = self.hidden_layer.get_mut(i).unwrap();
-            let mut temp_deltas = Vec::with_capacity(self.hidden_layer.get(i - 1).unwrap().len());
+            let mut temp_deltas = Vec::with_capacity(hidden_layer.weights_size() as usize);
+            let activation_derivation = hidden_layer.activation_derivation;
             for ln in 0..last_layer.len() {
                 // calc new weights
                 if let Neuron::Hidden(ll_neuron) = last_layer.get_mut(ln).unwrap() {
@@ -121,13 +122,7 @@ impl Network {
                             output_value = hidden_neuron.output_value;
                         }
                         ll_neuron.weights[lw] += ll_neuron.weights[lw];
-                        if last_layer.type_id() == TypeId::of::<HiddenLayer>() {
-                            let layer: &HiddenLayer = last_layer.as_any().downcast_ref::<&HiddenLayer>().unwrap();
-                            ll_neuron.weights[lw] += learning_rate * (layer.activation_derivation)(output_value) * neuron_deltas[lw]
-                        } else if last_layer.type_id() == TypeId::of::<OutputLayer>() {
-                            let layer: &OutputLayer = last_layer.as_any().downcast_ref::<&OutputLayer>().unwrap();
-                            ll_neuron.weights[lw] += learning_rate * (layer.activation_derivation)(output_value) * neuron_deltas[lw]
-                        }
+                        ll_neuron.weights[lw] += learning_rate * activation_derivation(output_value) * neuron_deltas[lw];
                     }
                 }
             }
@@ -214,7 +209,7 @@ mod tests {
     fn network_feed_forward_test() {
         let mut net = setup();
         net.input_layer.set_inputs(vec![2.0, 3.0]);
-        net.feed_forward();
+        net.forward_pass();
 
         println!("{:?}", &net.input_layer);
         println!("{:?}", &net.hidden_layer[0]);
@@ -234,7 +229,7 @@ mod tests {
     fn network_backward_pass_test() {
         let mut net = setup();
         net.input_layer.set_inputs(vec![2.0, 3.0]);
-        net.feed_forward();
+        net.forward_pass();
 
         net.backward_pass(vec![1.0]);
 

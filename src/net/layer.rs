@@ -20,6 +20,8 @@ pub trait Layer {
     fn get_all_mut(&mut self) -> &mut Array1<Neuron>;
 
     fn as_any(&self) -> &dyn Any;
+
+    fn get_activation_derivation(&self) -> fn(f32) -> f32;
 }
 
 #[derive(Debug, Clone)]
@@ -56,15 +58,19 @@ impl Layer for InputLayer {
         self.inputs.get_mut(index)
     }
 
+    fn get_all(&self) -> &Array1<Neuron> {
+        &self.inputs
+    }
+
+    fn get_all_mut(&mut self) -> &mut Array1<Neuron> {
+        &mut self.inputs
+    }
     fn as_any(&self) -> &dyn Any {
         self
     }
 
-    fn get_all(&self) -> &Array1<Neuron> {
-        &self.inputs
-    }
-    fn get_all_mut(&mut self) -> &mut Array1<Neuron> {
-        &mut self.inputs
+    fn get_activation_derivation(&self) -> fn(f32) -> f32 {
+        |x| x
     }
 }
 
@@ -87,7 +93,7 @@ impl InputLayer {
         self.inputs = Array1::from_vec(
             input_values
                 .into_iter()
-                .map(|n| Neuron::Input(Input { input_value: n, output_value: 0.0 }))
+                .map(|n| Neuron::Input(Input { input_value: n, output_value: n }))
                 .collect(),
         );
     }
@@ -161,17 +167,21 @@ impl Layer for OutputLayer {
         self.outputs.get_mut(index)
     }
 
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-
     fn get_all(&self) -> &Array1<Neuron> {
         &self.outputs
     }
 
+
     fn get_all_mut(&mut self) -> &mut Array1<Neuron> {
         &mut self.outputs
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn get_activation_derivation(&self) -> fn(f32) -> f32 {
+       self.activation_derivation
     }
 }
 
@@ -248,16 +258,20 @@ impl Layer for HiddenLayer{
         self.neurons.get_mut(index)
     }
 
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
     fn get_all(&self) -> &Array1<Neuron> {
         &self.neurons
     }
 
     fn get_all_mut(&mut self) -> &mut Array1<Neuron> {
         &mut self.neurons
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn get_activation_derivation(&self) -> fn(f32) -> f32 {
+        self.activation_derivation
     }
 }
 
