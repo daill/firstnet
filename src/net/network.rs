@@ -91,7 +91,7 @@ impl Network {
         // 
         let learning_rate = 0.05;
         let mut last_layer: &mut dyn Layer = &mut self.output_layer;
-        let mut neuron_deltas: Vec<f32> = Vec::with_capacity(last_layer.len());
+        let mut neuron_deltas: Vec<f32> = vec![0.0; self.hidden_layer[0].len()];
         for n in 0..last_layer.len() {
             let mut outputs = &mut last_layer.get_all_mut();
             let neuron = outputs.get_mut(n).unwrap();
