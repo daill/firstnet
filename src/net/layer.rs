@@ -231,7 +231,7 @@ impl HiddenLayer {
 
 impl Layer for HiddenLayer{
     fn weights_size(&self) -> u32 {
-        self.neurons.len().try_into().unwrap()
+        self.neurons[0].len().try_into().unwrap()
     }
 
     fn values_as_arr(&self) -> Array1<f32> {
