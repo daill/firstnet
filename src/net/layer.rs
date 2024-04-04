@@ -31,7 +31,10 @@ pub struct InputLayer {
 
 impl Layer for InputLayer {
     fn weights_size(&self) -> u32 {
-        self.inputs.len().try_into().unwrap()
+        match self.inputs.first().unwrap() {
+            Neuron::Input(i) => 0,
+            _ => {0}
+        }
     }
 
     fn values_as_arr(&self) -> Array1<f32> {
@@ -139,7 +142,10 @@ impl OutputLayer {
 
 impl Layer for OutputLayer {
     fn weights_size(&self) -> u32 {
-        self.outputs.len().try_into().unwrap()
+        match self.outputs.first().unwrap() {
+            Neuron::Output(o) => o.weights.len().try_into().unwrap(),
+            _ => {0}
+        }
     }
 
     fn values_as_arr(&self) -> Array1<f32> {
@@ -231,7 +237,10 @@ impl HiddenLayer {
 
 impl Layer for HiddenLayer{
     fn weights_size(&self) -> u32 {
-        self.neurons[0].len().try_into().unwrap()
+        match self.neurons.first().unwrap() {
+            Neuron::Hidden(h) => h.weights.len().try_into().unwrap(),
+            _ => {0}
+        }
     }
 
     fn values_as_arr(&self) -> Array1<f32> {

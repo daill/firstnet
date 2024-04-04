@@ -105,10 +105,10 @@ impl Network {
             }
         }
 
-
-        for i in (self.hidden_layer.len()-1)..0 {
+        for i in (0..self.hidden_layer.len()).rev() {
+            println!("{:?}", (self.hidden_layer.len()-1));
             let mut hidden_layer = self.hidden_layer.get_mut(i).unwrap();
-            let mut temp_deltas = Vec::with_capacity(hidden_layer.weights_size() as usize);
+            let mut temp_deltas = vec![0.0; hidden_layer.len()];
             let activation_derivation = hidden_layer.activation_derivation;
             for ln in 0..last_layer.len() {
                 // calc new weights
