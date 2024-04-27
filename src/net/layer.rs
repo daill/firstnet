@@ -7,19 +7,24 @@ use crate::net::neuron::Neuron;
 use super::neuron::{Bias, Hidden, Input, Output};
 
 pub trait Layer {
-    fn weights_size(&self) -> u32;
+    // return the number of weights
+    fn len_weights(&self) -> u32;
     fn values_as_arr(&self) -> Array1<f32>;
 
+    // return the number of neurons
     fn len(&self) -> usize;
+
+    // return the neuron at index
     fn get(&self, index: usize) -> Option<&Neuron>;
 
+    // return mutable reference to neuron at index
     fn get_mut(&mut self, index: usize) -> Option<&mut Neuron>;
 
+    // return all neurons
     fn get_all(&self) -> &Array1<Neuron>;
 
+    // return mutable reference to all neurons
     fn get_all_mut(&mut self) -> &mut Array1<Neuron>;
-
-    fn as_any(&self) -> &dyn Any;
 
     fn get_activation_derivation(&self) -> fn(f32) -> f32;
 }
@@ -30,7 +35,7 @@ pub struct InputLayer {
 }
 
 impl Layer for InputLayer {
-    fn weights_size(&self) -> u32 {
+    fn len_weights(&self) -> u32 {
         match self.inputs.first().unwrap() {
             Neuron::Input(i) => 0,
             _ => {0}
@@ -68,9 +73,6 @@ impl Layer for InputLayer {
     fn get_all_mut(&mut self) -> &mut Array1<Neuron> {
         &mut self.inputs
     }
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
 
     fn get_activation_derivation(&self) -> fn(f32) -> f32 {
         |x| x
@@ -83,9 +85,9 @@ impl InputLayer {
     }
 
     pub fn new(mut layer_size: u32, bias: bool) -> Self {
-        let mut inputs = vec![Neuron::Input(Input { input_value: 0.0, output_value: 0.0 }); layer_size.try_into().unwrap()];
+        let mut inputs = vec![Neuron::Input(Input { input_value: 0.0, output_value: 0.0, weights: Array1::zeros(0) }); layer_size.try_into().unwrap()];
         if bias {
-            inputs.push(Neuron::Bias(Bias { input_value: 1.0, output_value: 1.0 }));
+            inputs.push(Neuron::Bias(Bias { input_value: 1.0, output_value: 1.0, weights: Array1::zeros(0) }));
         }
         Self {
             inputs: Array1::from_vec(inputs),
@@ -96,7 +98,7 @@ impl InputLayer {
         self.inputs = Array1::from_vec(
             input_values
                 .into_iter()
-                .map(|n| Neuron::Input(Input { input_value: n, output_value: n }))
+                .map(|n| Neuron::Input(Input { input_value: n, output_value: n, weights: Array1::zeros(0) }))
                 .collect(),
         );
     }
@@ -123,7 +125,7 @@ impl OutputLayer {
         weight_function: fn(u32) -> Array1<f32>,
         prev_layer: &dyn Layer,
     ) -> Self {
-        let weights = weight_function(prev_layer.weights_size());
+        let weights = weight_function(prev_layer.len_weights());
         let mut outputs: Vec<Neuron> = vec![
             Neuron::Output(Output {
                 input_value: 0.0,
@@ -141,7 +143,7 @@ impl OutputLayer {
 }
 
 impl Layer for OutputLayer {
-    fn weights_size(&self) -> u32 {
+    fn len_weights(&self) -> u32 {
         match self.outputs.first().unwrap() {
             Neuron::Output(o) => o.weights.len().try_into().unwrap(),
             _ => {0}
@@ -182,10 +184,6 @@ impl Layer for OutputLayer {
         &mut self.outputs
     }
 
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
     fn get_activation_derivation(&self) -> fn(f32) -> f32 {
        self.activation_derivation
     }
@@ -214,7 +212,7 @@ impl HiddenLayer {
         weight_function: fn(u32) -> Array1<f32>,
         prev_layer: &dyn Layer,
     ) -> Self {
-        let weights = weight_function(prev_layer.weights_size());
+        let weights = weight_function(prev_layer.len_weights());
         let mut neurons: Vec<Neuron> = vec![
             Neuron::Hidden(Hidden {
                 input_value: 0.0,
@@ -224,7 +222,7 @@ impl HiddenLayer {
             layer_size.try_into().unwrap()
         ];
         if bias {
-            neurons.push(Neuron::Bias(Bias { input_value: 1.0, output_value: 1.0 }));
+            neurons.push(Neuron::Bias(Bias { input_value: 1.0, output_value: 1.0, weights: Array1::zeros(0)}));
         }
         Self {
             neurons : Array1::from_vec(neurons),
@@ -236,7 +234,7 @@ impl HiddenLayer {
 }
 
 impl Layer for HiddenLayer{
-    fn weights_size(&self) -> u32 {
+    fn len_weights(&self) -> u32 {
         match self.neurons.first().unwrap() {
             Neuron::Hidden(h) => h.weights.len().try_into().unwrap(),
             _ => {0}
@@ -273,10 +271,6 @@ impl Layer for HiddenLayer{
 
     fn get_all_mut(&mut self) -> &mut Array1<Neuron> {
         &mut self.neurons
-    }
-
-    fn as_any(&self) -> &dyn Any {
-        self
     }
 
     fn get_activation_derivation(&self) -> fn(f32) -> f32 {

@@ -4,6 +4,7 @@ use std::fmt;
 use crate::net::layer::Layer;
 use itertools::Itertools;
 use ndarray::{Array0, Array1, ArrayBase};
+use crate::net::neuron::NeuronBase;
 
 use super::{
     activation_functions,
@@ -95,13 +96,13 @@ impl Network {
         for n in 0..last_layer.len() {
             let mut outputs = &mut last_layer.get_all_mut();
             let neuron = outputs.get_mut(n).unwrap();
-            if let Neuron::Output(output_neuron) = neuron {
-                let neuron_weights = &mut output_neuron.weights;
-
-                let delta = output_neuron.output_value - expected[n];
-                for i in 0..neuron_weights.len() {
-                    neuron_deltas[i] += delta * neuron_weights[i];
-                }
+            let delta = neuron.get_output_value() - expected[n];
+            println!("{:?}", delta);
+            let neuron_output = neuron.get_output_value();
+            let neuron_weights = neuron.get_mut_weights();
+            for i in 0..neuron_weights.len() {
+                neuron_deltas[i] += delta * neuron_weights);
+                println!("{:?}", neuron_deltas);
             }
         }
 
@@ -112,19 +113,19 @@ impl Network {
             let activation_derivation = hidden_layer.activation_derivation;
             for ln in 0..last_layer.len() {
                 // calc new weights
-                if let Neuron::Hidden(ll_neuron) = last_layer.get_mut(ln).unwrap() {
-                    let mut output_value = 0.0;
-                    for lw in 0..ll_neuron.weights.len() {
-                        let hn_out = hidden_layer.get(lw).unwrap();
-                        if let Neuron::Output(output_neuron) = hn_out {
-                            output_value = output_neuron.output_value;
-                        } else if let Neuron::Hidden(hidden_neuron) = hn_out {
-                            output_value = hidden_neuron.output_value;
-                        }
-                        ll_neuron.weights[lw] += ll_neuron.weights[lw];
-                        ll_neuron.weights[lw] += learning_rate * activation_derivation(output_value) * neuron_deltas[lw];
-                    }
+                let mut ll_neuron: &mut dyn NeuronBase = last_layer.get_mut(ln).unwrap();
+                let mut output_value = 0.0;
+                let mut ll_weights = ll_neuron.get_mut_weights();
+                for lw in 0..ll_weights.len() {
+                    let hn_out = hidden_layer.get(lw).unwrap();
+                    output_value = hn_out.get_output_value();
+                    println!("{:?}", ll_weights[lw]);
+                    ll_weights[lw] -= learning_rate * activation_derivation(output_value) * neuron_deltas[lw];
+
+                    println!("{:?}", ll_weights[lw]);
+
                 }
+
             }
 
             for n in 0..hidden_layer.neurons.len() {
@@ -232,6 +233,9 @@ mod tests {
         net.forward_pass();
 
         net.backward_pass(vec![1.0]);
+
+
+        net.forward_pass();
 
         println!("{:?}", &net);
         assert_eq!(1, 0);
