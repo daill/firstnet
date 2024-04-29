@@ -1,8 +1,9 @@
 use std::any::Any;
 use ndarray::prelude::*;
 use std::fmt;
+use tracing::instrument::WithSubscriber;
 
-use crate::net::neuron::Neuron;
+use crate::net::neuron::{Neuron, NeuronBase};
 
 use super::neuron::{Bias, Hidden, Input, Output};
 
@@ -32,6 +33,7 @@ pub trait Layer {
 #[derive(Debug, Clone)]
 pub struct InputLayer {
     pub inputs: Array1<Neuron>,
+    pub has_bias: bool,
 }
 
 impl Layer for InputLayer {
@@ -48,6 +50,7 @@ impl Layer for InputLayer {
                 .iter()
                 .map(|n| match n {
                     Neuron::Input(i) => i.output_value,
+                    Neuron::Bias(b) => b.output_value,
                     _ => 0.0,
                 })
                 .collect(),
@@ -80,27 +83,32 @@ impl Layer for InputLayer {
 }
 
 impl InputLayer {
-    fn from_inputs(inputs: Array1<Neuron>) -> Self {
-        Self { inputs }
+    fn from_inputs(inputs: Array1<Neuron>, has_bias: bool) -> Self {
+        Self { inputs, has_bias }
     }
 
     pub fn new(mut layer_size: u32, bias: bool) -> Self {
         let mut inputs = vec![Neuron::Input(Input { input_value: 0.0, output_value: 0.0, weights: Array1::zeros(0) }); layer_size.try_into().unwrap()];
         if bias {
-            inputs.push(Neuron::Bias(Bias { input_value: 1.0, output_value: 1.0, weights: Array1::zeros(0) }));
+            inputs.push(Neuron::Bias(Bias::new()));
         }
         Self {
             inputs: Array1::from_vec(inputs),
+            has_bias: bias,
         }
     }
 
     pub fn set_inputs(&mut self, input_values: Vec<f32>) {
-        self.inputs = Array1::from_vec(
-            input_values
-                .into_iter()
-                .map(|n| Neuron::Input(Input { input_value: n, output_value: n, weights: Array1::zeros(0) }))
-                .collect(),
-        );
+        let mut c = self.inputs.len();
+        if self.has_bias {
+            c -= 1;
+        }
+        assert_eq!(c, input_values.len());
+
+        for i in 0..self.inputs.len()-1 {
+            let mut input = self.inputs.get_mut(i).unwrap();
+            input.set_input_value(input_values[i]);
+        }
     }
 }
 
@@ -223,6 +231,7 @@ impl HiddenLayer {
         ];
         if bias {
             neurons.push(Neuron::Bias(Bias { input_value: 1.0, output_value: 1.0, weights: Array1::zeros(0)}));
+
         }
         Self {
             neurons : Array1::from_vec(neurons),
@@ -247,6 +256,7 @@ impl Layer for HiddenLayer{
                 .iter()
                 .map(|n| match n {
                     Neuron::Hidden(i) => i.input_value,
+                    Neuron::Bias(b) => b.output_value,
                     _ => 0.0,
                 })
                 .collect(),

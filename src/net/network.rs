@@ -1,5 +1,6 @@
 use std::any::{Any, TypeId};
 use std::fmt;
+use std::fmt::Debug;
 
 use crate::net::layer::Layer;
 use itertools::Itertools;
@@ -88,8 +89,9 @@ impl Network {
 
 
 
-    pub fn backward_pass(&mut self, expected: Vec<f32>) {
-        // 
+    pub fn backward_pass(&mut self, expected: Vec<f32>) -> f32 {
+        //
+        let mut global_error = 0.0;
         let learning_rate = 0.05;
         let mut last_layer: &mut dyn Layer = &mut self.output_layer;
         let mut neuron_deltas: Vec<f32> = vec![0.0; self.hidden_layer[self.hidden_layer.len()-1].len()];
@@ -97,11 +99,12 @@ impl Network {
             let mut outputs = &mut last_layer.get_all_mut();
             let neuron = outputs.get_mut(n).unwrap();
             let delta = neuron.get_output_value() - expected[n];
+            global_error += 0.5 * delta.powf(2.0);
             println!("{:?}", delta);
             let neuron_output = neuron.get_output_value();
             let neuron_weights = neuron.get_mut_weights();
             for i in 0..neuron_weights.len() {
-                neuron_deltas[i] += delta * neuron_weights);
+                neuron_deltas[i] += delta * neuron_weights[i];
                 println!("{:?}", neuron_deltas);
             }
         }
@@ -119,10 +122,10 @@ impl Network {
                 for lw in 0..ll_weights.len() {
                     let hn_out = hidden_layer.get(lw).unwrap();
                     output_value = hn_out.get_output_value();
-                    println!("{:?}", ll_weights[lw]);
+                    println!("{:?}", ll_weights);
                     ll_weights[lw] -= learning_rate * activation_derivation(output_value) * neuron_deltas[lw];
 
-                    println!("{:?}", ll_weights[lw]);
+                    println!("{:?}", ll_weights);
 
                 }
 
@@ -141,6 +144,7 @@ impl Network {
 
             neuron_deltas = temp_deltas;
         }
+        return global_error;
     }
 
 
@@ -167,6 +171,7 @@ impl fmt::Display for Network {
 #[cfg(test)]
 mod tests {
     use ndarray::array;
+    use rand::Rng;
 
     use crate::net::{activation_functions, neuron::Output, weight_functions::xavier_init};
 
@@ -175,7 +180,7 @@ mod tests {
     fn setup() -> Network{
         let mut input_layer = InputLayer::new(2, true);
         let mut hidden_a = HiddenLayer::new(
-            2,
+            3,
             true,
             activation_functions::nop,
             activation_functions::nop_derivative,
@@ -185,20 +190,26 @@ mod tests {
         let neurons = vec![
             Neuron::Hidden(Hidden {
                 input_value: 0.0,
-                weights: array![0.11, 0.21],
+                weights: array![0.11, 0.21, 0.31],
                 output_value: 0.0,
             }),
             Neuron::Hidden(Hidden {
                 input_value: 0.0,
-                weights: array![0.12, 0.08],
+                weights: array![0.12, 0.08, 0.04],
                 output_value: 0.0,
             }),
+
+            Neuron::Bias(Bias {
+                input_value: 1.0,
+                output_value: 0.0,
+                weights: array![0.0],
+            })
         ];
         hidden_a.neurons = Array1::from_vec(neurons);
         let mut output = OutputLayer::new(1, activation_functions::nop, activation_functions::nop_derivative, xavier_init, &hidden_a);
         let outputs = vec![Neuron::Output(Output {
             input_value: 0.0,
-            weights: array![0.14, 0.15],
+            weights: array![0.14, 0.15, 0.13],
             output_value: 0.0,
         })];
         output.outputs = Array1::from_vec(outputs);
@@ -212,9 +223,6 @@ mod tests {
         net.input_layer.set_inputs(vec![2.0, 3.0]);
         net.forward_pass();
 
-        println!("{:?}", &net.input_layer);
-        println!("{:?}", &net.hidden_layer[0]);
-        println!("{:?}", &net.output_layer);
         assert_eq!(1, 0);
     }
 
@@ -231,13 +239,44 @@ mod tests {
         let mut net = setup();
         net.input_layer.set_inputs(vec![2.0, 3.0]);
         net.forward_pass();
-
         net.backward_pass(vec![1.0]);
 
 
-        net.forward_pass();
-
         println!("{:?}", &net);
         assert_eq!(1, 0);
+    }
+
+    #[test]
+    fn network_training_test() {
+        let mut net = setup();
+
+        let data = array![[0.0, 0.0, 0.0],
+                                        [1.0, 0.0, 1.0],
+                                        [1.0, 1.0, 0.0],
+                                        [1.0, 1.0, 1.0]];
+
+        let iterations = 1000;
+        let mut rng = rand::thread_rng();
+
+
+        for i in 0..iterations {
+            let index = rng.gen_range(0..data.len());
+
+            net.input_layer.set_inputs(vec![2.0, 3.0]);
+            net.forward_pass();
+        }
+
+
+
+        let mut error = 1.0;
+
+        while error > 0.00000000001 {
+            error = net.backward_pass(vec![1.0]);
+            net.forward_pass();
+            println!("{:?}", error);
+        }
+
+
+        println!("{:?}", &net);
     }
 }
