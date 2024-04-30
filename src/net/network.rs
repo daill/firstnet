@@ -78,12 +78,6 @@ impl Network {
                 o.output_value = (output_layer.activation_function)(o.input_value);
             }
         }
-
-        println!("{:?}", self.input_layer);
-        for i in 0..self.hidden_layer.len() {
-            println!("{:?}", self.hidden_layer[i]);
-        }
-        println!("{:?}", output_layer);
     }
 
 
@@ -148,10 +142,10 @@ impl Network {
     }
 
 
-    pub fn calc_total_error(&mut self, values: Array1<f32>, expected: Array1<f32>) -> f32 {
+    pub fn calc_total_error(&mut self, expected: Array1<f32>) -> f32 {
         let mut error = 0.0;
-        for n in 0..values.len() {
-            error += 0.5 * (values.get(n).unwrap() - expected.get(n).unwrap()).powf(2.0);
+        for n in 0..self.output_layer.len() {
+            error += 0.5 * (self.output_layer.get(n).unwrap().get_output_value() - expected.get(n).unwrap()).powf(2.0);
         }
 
         return error;
@@ -231,7 +225,7 @@ mod tests {
         let mut net = setup();
         let values = array![0.191];
         let expected = array![1.0];
-        assert_eq!(0.32724053, net.calc_total_error(values, expected));
+        assert_eq!(0.32724053, net.calc_total_error(expected));
     }
 
     #[test]
@@ -250,6 +244,7 @@ mod tests {
     fn network_training_test() {
         let mut net = setup();
 
+        let mut error = 1.0;
         let data = array![[0.0, 0.0, 0.0],
                                         [1.0, 0.0, 1.0],
                                         [1.0, 1.0, 0.0],
@@ -258,24 +253,25 @@ mod tests {
         let iterations = 1000;
         let mut rng = rand::thread_rng();
 
+        let mut error_vec: Vec<f32> = vec![];
 
         for i in 0..iterations {
             let index = rng.gen_range(0..data.len());
 
-            net.input_layer.set_inputs(vec![2.0, 3.0]);
+            net.input_layer.set_inputs(vec![data[[i,1]], data[[i,2]]]);
             net.forward_pass();
-        }
-
-
-
-        let mut error = 1.0;
-
-        while error > 0.00000000001 {
             error = net.backward_pass(vec![1.0]);
-            net.forward_pass();
-            println!("{:?}", error);
-        }
 
+            if i % 100 == 0 {
+                let mut total_error = 0.0;
+                for n in 0..(data.len()-1) {
+                    net.input_layer.set_inputs(vec![data[[i,1]], data[[i,2]]]);
+                    net.forward_pass();
+                    total_error += net.calc_total_error(array![data[[n,0]]]);
+                }
+            }
+
+        }
 
         println!("{:?}", &net);
     }
