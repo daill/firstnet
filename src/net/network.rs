@@ -94,17 +94,14 @@ impl Network {
             let neuron = outputs.get_mut(n).unwrap();
             let delta = neuron.get_output_value() - expected[n];
             global_error += 0.5 * delta.powf(2.0);
-            println!("{:?}", delta);
             let neuron_output = neuron.get_output_value();
             let neuron_weights = neuron.get_mut_weights();
             for i in 0..neuron_weights.len() {
                 neuron_deltas[i] += delta * neuron_weights[i];
-                println!("{:?}", neuron_deltas);
             }
         }
 
         for i in (0..self.hidden_layer.len()).rev() {
-            println!("{:?}", (self.hidden_layer.len()-1));
             let mut hidden_layer = self.hidden_layer.get_mut(i).unwrap();
             let mut temp_deltas = vec![0.0; hidden_layer.len()];
             let activation_derivation = hidden_layer.activation_derivation;
@@ -116,11 +113,7 @@ impl Network {
                 for lw in 0..ll_weights.len() {
                     let hn_out = hidden_layer.get(lw).unwrap();
                     output_value = hn_out.get_output_value();
-                    println!("{:?}", ll_weights);
                     ll_weights[lw] -= learning_rate * activation_derivation(output_value) * neuron_deltas[lw];
-
-                    println!("{:?}", ll_weights);
-
                 }
 
             }
@@ -136,6 +129,7 @@ impl Network {
                 }
             }
 
+            last_layer = hidden_layer.clone();
             neuron_deltas = temp_deltas;
         }
         return global_error;
@@ -255,24 +249,32 @@ mod tests {
 
         let mut error_vec: Vec<f32> = vec![];
 
+        println!("{:?}", &net);
         for i in 0..iterations {
-            let index = rng.gen_range(0..data.len());
+            let index = rng.gen_range(0..data.shape()[0]-1);
 
-            net.input_layer.set_inputs(vec![data[[i,1]], data[[i,2]]]);
+            net.input_layer.set_inputs(vec![data[[index,1]], data[[index,2]]]);
             net.forward_pass();
             error = net.backward_pass(vec![1.0]);
 
-            if i % 100 == 0 {
+            if i % 10 == 0 {
                 let mut total_error = 0.0;
-                for n in 0..(data.len()-1) {
-                    net.input_layer.set_inputs(vec![data[[i,1]], data[[i,2]]]);
+                for n in 0..(data.shape()[0]) {
+                    net.input_layer.set_inputs(vec![data[[n,1]], data[[n,2]]]);
                     net.forward_pass();
                     total_error += net.calc_total_error(array![data[[n,0]]]);
                 }
+                println!("{}: {}", i, total_error);
             }
 
         }
 
         println!("{:?}", &net);
+        net.input_layer.set_inputs(vec![0.0, 0.0]);
+        net.forward_pass();
+        println!("{:?}", net.output_layer.get_all().get(0).unwrap().get_output_value());
+
+
+
     }
 }
