@@ -87,10 +87,10 @@ impl Network {
         //
         let mut global_error = 0.0;
         let learning_rate = 0.05;
-        let mut last_layer: &mut dyn Layer = &mut self.output_layer;
+        let mut output_layer: &mut dyn Layer = &mut self.output_layer;
         let mut neuron_deltas: Vec<f32> = vec![0.0; self.hidden_layer[self.hidden_layer.len()-1].len()];
-        for n in 0..last_layer.len() {
-            let mut outputs = &mut last_layer.get_all_mut();
+        for n in 0..output_layer.len() {
+            let mut outputs = &mut output_layer.get_all_mut();
             let neuron = outputs.get_mut(n).unwrap();
             let delta = neuron.get_output_value() - expected[n];
             global_error += 0.5 * delta.powf(2.0);
@@ -101,35 +101,55 @@ impl Network {
             }
         }
 
-        for i in (0..self.hidden_layer.len()).rev() {
-            let mut hidden_layer = self.hidden_layer.get_mut(i).unwrap();
-            let mut temp_deltas = vec![0.0; hidden_layer.len()];
-            let activation_derivation = hidden_layer.activation_derivation;
-            for ln in 0..last_layer.len() {
-                // calc new weights
-                let mut ll_neuron: &mut dyn NeuronBase = last_layer.get_mut(ln).unwrap();
-                let mut output_value = 0.0;
-                let mut ll_weights = ll_neuron.get_mut_weights();
-                for lw in 0..ll_weights.len() {
-                    let hn_out = hidden_layer.get(lw).unwrap();
-                    output_value = hn_out.get_output_value();
-                    ll_weights[lw] -= learning_rate * activation_derivation(output_value) * neuron_deltas[lw];
-                }
-
+        let mut hidden_layer = self.hidden_layer.last().unwrap();
+        let activation_derivation = hidden_layer.activation_derivation;
+        for ln in 0..hidden_layer.len() {
+            // calc new weights
+            let mut ll_neuron: &mut Neuron = output_layer.get_mut(ln).unwrap();
+            let mut output_value = 0.0;
+            let mut ll_weights = ll_neuron.get_mut_weights();
+            for lw in 0..ll_weights.len() {
+                let hn_out = hidden_layer.get(lw).unwrap();
+                output_value = hn_out.get_output_value();
+                ll_weights[lw] -= learning_rate * activation_derivation(output_value) * neuron_deltas[lw];
             }
 
-            for n in 0..hidden_layer.neurons.len() {
-                let mut neuron = hidden_layer.neurons.get_mut(n).unwrap();
+        }
 
-                if let Neuron::Hidden(h) = neuron {
+        for i in (1..self.hidden_layer.len()).rev() {
+
+            let mut hidden_layer = &mut self.hidden_layer;
+            let mut current_layer = &mut hidden_layer[i];
+
+            let mut temp_deltas = vec![0.0; current_layer.len()];
+            let  next_layer = &hidden_layer[i+1];
+
+            let activation_derivation = current_layer.activation_derivation;
+
+
+            for n in 0..current_layer.neurons.len() {
+                let mut neuron = current_layer.neurons.get_mut(n).unwrap();
+
+                if let Neuron::Hidden(mut h) = neuron {
                     let neuron_weights = &mut h.weights;
                     for i in 0..neuron_weights.len() {
                         temp_deltas[i] += neuron_weights[i] * neuron_deltas[i];
                     }
                 }
             }
+            for ln in 0..current_layer.len() {
+                // calc new weights
+                let mut ll_neuron: &mut dyn NeuronBase = current_layer.get_mut(ln).unwrap();
+                let mut output_value = 0.0;
+                let mut ll_weights = ll_neuron.get_mut_weights();
+                for lw in 0..ll_weights.len() {
+                    let hn_out = next_layer.get(lw).unwrap();
+                    output_value = hn_out.get_output_value();
+                    ll_weights[lw] -= learning_rate * activation_derivation(output_value) * neuron_deltas[lw];
+                }
 
-            last_layer = hidden_layer.clone();
+            }
+
             neuron_deltas = temp_deltas;
         }
         return global_error;
