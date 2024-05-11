@@ -94,35 +94,36 @@ impl Network {
             let neuron = outputs.get_mut(n).unwrap();
             let delta = neuron.get_output_value() - expected[n];
             global_error += 0.5 * delta.powf(2.0);
-            let neuron_output = neuron.get_output_value();
             let neuron_weights = neuron.get_mut_weights();
             for i in 0..neuron_weights.len() {
                 neuron_deltas[i] += delta * neuron_weights[i];
             }
         }
 
-        let mut hidden_layer = self.hidden_layer.last().unwrap();
+        let mut hidden_layer:  &mut HiddenLayer = self.hidden_layer.last_mut().unwrap();
         let activation_derivation = hidden_layer.activation_derivation;
-        for ln in 0..hidden_layer.len() {
+        for ln in 0..output_layer.len() {
             // calc new weights
             let mut ll_neuron: &mut Neuron = output_layer.get_mut(ln).unwrap();
             let mut output_value = 0.0;
             let mut ll_weights = ll_neuron.get_mut_weights();
             for lw in 0..ll_weights.len() {
-                let hn_out = hidden_layer.get(lw).unwrap();
+                let mut hn_out = hidden_layer.get_mut(lw).unwrap();
                 output_value = hn_out.get_output_value();
                 ll_weights[lw] -= learning_rate * activation_derivation(output_value) * neuron_deltas[lw];
             }
 
         }
 
-        for i in (1..self.hidden_layer.len()).rev() {
+        let iter = (0..self.hidden_layer.len()).rev().into_iter();
+        println!("here");
+        for (prev, next) in iter.tuple_windows() {
 
             let mut hidden_layer = &mut self.hidden_layer;
-            let mut current_layer = &mut hidden_layer[i];
+            let mut current_layer = hidden_layer.get_mut(prev).unwrap();
 
             let mut temp_deltas = vec![0.0; current_layer.len()];
-            let  next_layer = &hidden_layer[i+1];
+            let  next_layer = hidden_layer.get_mut(i+1).unwrap();
 
             let activation_derivation = current_layer.activation_derivation;
 
@@ -214,6 +215,35 @@ mod tests {
             })
         ];
         hidden_a.neurons = Array1::from_vec(neurons);
+
+        let neurons_b = vec![
+            Neuron::Hidden(Hidden {
+                input_value: 0.0,
+                weights: array![0.11, 0.21, 0.31],
+                output_value: 0.0,
+            }),
+            Neuron::Hidden(Hidden {
+                input_value: 0.0,
+                weights: array![0.12, 0.08, 0.04],
+                output_value: 0.0,
+            }),
+
+            Neuron::Bias(Bias {
+                input_value: 1.0,
+                output_value: 0.0,
+                weights: array![0.0],
+            })
+        ];
+
+        let mut hidden_ab = HiddenLayer::new(
+            3,
+            true,
+            activation_functions::nop,
+            activation_functions::nop_derivative,
+            xavier_init,
+            &hidden_a,
+        );
+        hidden_ab.neurons = Array1::from_vec(neurons_b);
         let mut output = OutputLayer::new(1, activation_functions::nop, activation_functions::nop_derivative, xavier_init, &hidden_a);
         let outputs = vec![Neuron::Output(Output {
             input_value: 0.0,
@@ -222,7 +252,7 @@ mod tests {
         })];
         output.outputs = Array1::from_vec(outputs);
 
-        Network::new(input_layer, vec![hidden_a], output)
+        Network::new(input_layer, vec![hidden_a, hidden_ab], output)
     }
 
     #[test]
