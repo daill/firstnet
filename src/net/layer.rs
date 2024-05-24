@@ -49,7 +49,7 @@ impl Layer for InputLayer {
             self.inputs
                 .iter()
                 .map(|n| match n {
-                    Neuron::Input(i) => i.output_value,
+                    Neuron::Input(i) => i.input_value,
                     Neuron::Bias(b) => b.output_value,
                     _ => 0.0,
                 })
