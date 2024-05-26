@@ -86,7 +86,7 @@ impl Network {
     pub fn backward_pass(&mut self, expected: Vec<f32>) -> f32 {
         //
         let mut global_error = 0.0;
-        let learning_rate = 0.03;
+        let learning_rate = 0.1;
         let mut output_layer: &mut dyn Layer = &mut self.output_layer;
         let mut neuron_deltas: Vec<f32> = vec![0.0; self.hidden_layer[self.hidden_layer.len()-1].len()];
         for n in 0..output_layer.len() {
@@ -170,7 +170,11 @@ impl Network {
                 for i in 0..neuron_weights.len() {
                     temp_deltas[i] += neuron_weights[i] * neuron_deltas[i];
                 }
+                println!("{:?}", temp_deltas);
             }
+
+
+
         }
         for ln in 0..current_layer.len() {
             // calc new weights
@@ -182,6 +186,7 @@ impl Network {
                 ll_weights[lw] -= learning_rate * activation_derivation(output_value) * temp_deltas[lw];
 
             }
+            println!("{:?}", ll_weights);
 
         }
 
@@ -307,10 +312,10 @@ mod tests {
     #[test]
     fn network_backward_pass_test() {
         let mut net = setup();
-        net.input_layer.set_inputs(vec![1.0, 1.0]);
+        net.input_layer.set_inputs(vec![0.5, 0.5]);
         net.forward_pass();
         println!("{:?}", &net);
-        net.backward_pass(vec![1.0]);
+        net.backward_pass(vec![0.0]);
 
 
         println!("{:?}", &net);
@@ -322,12 +327,12 @@ mod tests {
         let mut net = setup();
 
         let mut error = 1.0;
-        let data = array![[0.0, 0.0, 0.0],
-                                        [1.0, 0.0, 1.0],
-                                        [1.0, 1.0, 0.0],
-                                        [0.0, 1.0, 1.0]];
+        let data = array![[0.0, -0.5, -0.5],
+                                        [1.0, 0.5, -0.5],
+                                        [0.0, 0.5, 0.5],
+                                        [1.0, -0.5, 0.5]];
 
-        let iterations = 100;
+        let iterations = 10000;
         let mut rng = rand::thread_rng();
 
         let mut error_vec: Vec<f32> = vec![];
@@ -348,22 +353,31 @@ mod tests {
 
                     total_error =net.output_layer.get(0).unwrap().get_output_value();
                     // total_error += 0.5 * (net.output_layer.get(0).unwrap().get_output_value() - data[[n, 0]]).powf(2.0);
-                    println!("{}: {} - {} {}", i, total_error, data[[n,1]], data[[n,2]]);
+                    // println!("{}: {} - {} {}", i, total_error, data[[n,1]], data[[n,2]]);
                 }
-                println!("{}: {}", i, total_error);
-                println!("{:?}", &net);
+                // println!("{}: {}", i, total_error);
+                // println!("{:?}", &net);
             }
 
         }
 
         println!("{:?}", &net);
-        net.input_layer.set_inputs(vec![1.0, 1.0]);
+        net.input_layer.set_inputs(vec![0.5, 0.5]);
         net.forward_pass();
         println!("{:?}", net.output_layer.get_all().get(0).unwrap().get_output_value());
 
-        net.input_layer.set_inputs(vec![0.0, 1.0]);
+        net.input_layer.set_inputs(vec![0.5, -0.5]);
         net.forward_pass();
         println!("{:?}", net.output_layer.get_all().get(0).unwrap().get_output_value());
+
+        net.input_layer.set_inputs(vec![-0.5, 0.5]);
+        net.forward_pass();
+        println!("{:?}", net.output_layer.get_all().get(0).unwrap().get_output_value());
+
+        net.input_layer.set_inputs(vec![-0.5, -0.5]);
+        net.forward_pass();
+        println!("{:?}", net.output_layer.get_all().get(0).unwrap().get_output_value());
+
 
 
     }
