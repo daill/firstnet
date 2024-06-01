@@ -105,7 +105,7 @@ impl InputLayer {
         }
         assert_eq!(c, input_values.len());
 
-        for i in 0..self.inputs.len()-1 {
+        for i in 0..self.inputs.len() {
             let mut input = self.inputs.get_mut(i).unwrap();
             input.set_input_value(input_values[i]);
         }

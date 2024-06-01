@@ -86,23 +86,26 @@ impl Network {
     pub fn backward_pass(&mut self, expected: Vec<f32>) -> f32 {
         //
         let mut global_error = 0.0;
-        let learning_rate = 0.1;
-        let mut output_layer: &mut dyn Layer = &mut self.output_layer;
+        let learning_rate = 0.03;
+        let mut output_layer: &mut OutputLayer = &mut self.output_layer;
         let mut neuron_deltas: Vec<f32> = vec![0.0; self.hidden_layer[self.hidden_layer.len()-1].len()];
+        let mut activation_derivation = output_layer.activation_derivation;
         for n in 0..output_layer.len() {
             let mut outputs = &mut output_layer.get_all_mut();
             let neuron = outputs.get_mut(n).unwrap();
             let delta = neuron.get_output_value() - expected[n];
             global_error += 0.5 * delta.powf(2.0);
 
-            let neuron_weights = neuron.get_mut_weights();
-            for i in 0..neuron_weights.len() {
-                neuron_deltas[i] += delta * neuron_weights[i];
+            neuron_deltas[n] += delta * activation_derivation(neuron.get_output_value());
+
+            let mut weights = neuron.get_mut_weights();
+            for lw in 0..weights.len() {
+                weights[lw] -= learning_rate * activation_derivation(neuron.get_output_value()) * neuron_deltas[lw];
             }
         }
 
         let mut hidden_layer:  &mut HiddenLayer = self.hidden_layer.last_mut().unwrap();
-        let activation_derivation = hidden_layer.activation_derivation;
+        activation_derivation = hidden_layer.activation_derivation;
         for ln in 0..output_layer.len() {
             // calc new weights
             let mut ll_neuron: &mut Neuron = output_layer.get_mut(ln).unwrap();
@@ -155,40 +158,38 @@ impl Network {
         //     neuron_deltas = temp_deltas;
         // }
 
-        let mut next_layer = &mut self.input_layer;
-        let next_layer_values = next_layer.values_as_arr();
-        let mut current_layer = &mut self.hidden_layer[0];
-
-        let mut temp_deltas = vec![0.0; current_layer.len()];
-
-        let activation_derivation = current_layer.activation_derivation;
-        for n in 0..current_layer.neurons.len() {
-            let mut neuron = current_layer.neurons.get_mut(n).unwrap();
-
-            if let Neuron::Hidden(h) = neuron {
-                let neuron_weights = &mut h.weights;
-                for i in 0..neuron_weights.len() {
-                    temp_deltas[i] += neuron_weights[i] * neuron_deltas[i];
-                }
-                println!("{:?}", temp_deltas);
-            }
-
-
-
-        }
-        for ln in 0..current_layer.len() {
-            // calc new weights
-            let mut ll_neuron: &mut Neuron = current_layer.get_mut(ln).unwrap();
-            let mut output_value = 0.0;
-            let mut ll_weights = ll_neuron.get_mut_weights();
-            for lw in 0..ll_weights.len() {
-                output_value = next_layer_values[lw];
-                ll_weights[lw] -= learning_rate * activation_derivation(output_value) * temp_deltas[lw];
-
-            }
-            println!("{:?}", ll_weights);
-
-        }
+        // let mut next_layer = &mut self.input_layer;
+        // let next_layer_values = next_layer.values_as_arr();
+        // let mut current_layer = &mut self.hidden_layer[0];
+        //
+        // let mut temp_deltas = vec![0.0; current_layer.len()];
+        //
+        // let activation_derivation = current_layer.activation_derivation;
+        // for n in 0..current_layer.neurons.len() {
+        //     let mut neuron = current_layer.neurons.get_mut(n).unwrap();
+        //
+        //     if let Neuron::Hidden(h) = neuron {
+        //         let neuron_weights = &mut h.weights;
+        //         for i in 0..neuron_weights.len() {
+        //             temp_deltas[i] += neuron_weights[i] * neuron_deltas[i];
+        //         }
+        //     }
+        //
+        //
+        //
+        // }
+        // for ln in 0..current_layer.len() {
+        //     // calc new weights
+        //     let mut ll_neuron: &mut Neuron = current_layer.get_mut(ln).unwrap();
+        //     let mut output_value = 0.0;
+        //     let mut ll_weights = ll_neuron.get_mut_weights();
+        //     for lw in 0..ll_weights.len() {
+        //         output_value = next_layer_values[lw];
+        //         ll_weights[lw] -= learning_rate * activation_derivation(output_value) * temp_deltas[lw];
+        //
+        //     }
+        //
+        // }
 
         return global_error;
     }
@@ -224,10 +225,10 @@ mod tests {
     use super::*;
 
     fn setup() -> Network{
-        let mut input_layer = InputLayer::new(2, true);
+        let mut input_layer = InputLayer::new(2, false);
         let mut hidden_a = HiddenLayer::new(
-            3,
-            true,
+            2,
+            false,
             activation_functions::sigmoid,
             activation_functions::sigmoid_derivative,
             xavier_init,
@@ -236,20 +237,16 @@ mod tests {
         let neurons = vec![
             Neuron::Hidden(Hidden {
                 input_value: 0.0,
-                weights: array![0.11, 0.21, 0.31],
+                weights: array![-0.30, -0.41],
                 output_value: 0.0,
             }),
             Neuron::Hidden(Hidden {
                 input_value: 0.0,
-                weights: array![0.12, 0.08, 0.04],
+                weights: array![-0.13, 0.31],
                 output_value: 0.0,
             }),
 
-            Neuron::Bias(Bias {
-                input_value: 1.0,
-                output_value: 1.0,
-                weights: array![0.0],
-            })
+
         ];
         hidden_a.neurons = Array1::from_vec(neurons);
 
@@ -284,7 +281,7 @@ mod tests {
         let mut output = OutputLayer::new(1, activation_functions::nop, activation_functions::nop_derivative, xavier_init, &hidden_a);
         let outputs = vec![Neuron::Output(Output {
             input_value: 0.0,
-            weights: array![0.14, 0.15, 0.16],
+            weights: array![-0.013, 0.020],
             output_value: 0.0,
         })];
         output.outputs = Array1::from_vec(outputs);
@@ -356,7 +353,7 @@ mod tests {
                     // println!("{}: {} - {} {}", i, total_error, data[[n,1]], data[[n,2]]);
                 }
                 // println!("{}: {}", i, total_error);
-                // println!("{:?}", &net);
+                println!("{:?}", &net);
             }
 
         }
