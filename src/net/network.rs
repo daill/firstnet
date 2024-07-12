@@ -52,13 +52,12 @@ impl Network {
 
         let hidden_layers = &mut self.hidden_layer;
         if (hidden_layers).len() > 1 {
-            let iter = (1..hidden_layers.len() - 1).into_iter();
-            for (prev, next) in iter.tuple_windows() {
-                let prev_layer = hidden_layers.get(prev).unwrap();
+            for n in (0..hidden_layers.len()-1) {
+                let prev_layer = hidden_layers.get(n).unwrap();
                 let values = prev_layer.values_as_arr();
-                let next_layer = &mut hidden_layers[next];
-                for n in 0..next_layer.neurons.len() {
-                    let mut neuron = next_layer.neurons.get_mut(n).unwrap();
+                let next_layer = &mut hidden_layers[n + 1];
+                for i in 0..next_layer.neurons.len() {
+                    let mut neuron = next_layer.neurons.get_mut(i).unwrap();
                     if let Neuron::Hidden(h) = neuron {
                         h.input_value = values.dot(&h.weights);
                         h.output_value = (next_layer.activation_function)(h.input_value);
@@ -106,7 +105,7 @@ impl Network {
             for lw in 0..weights.len() {
                 neuron_deltas[lw] += diff * weights[lw];
 
-                weights[lw] = (learning_rate * diff * hidden_layer_values[lw]) - weights[lw];
+                weights[lw] = weights[lw] - (learning_rate * diff * hidden_layer_values[lw]);
             }
         }
 
@@ -129,7 +128,7 @@ impl Network {
 
                     for lw in 0..ll_weights.len() {
                         temp_deltas[lw] += ll_weights[lw] * neuron_deltas[lw];
-                        ll_weights[lw] = (learning_rate * neuron_deltas[lw] * next_layer_values[lw]) - ll_weights[lw];
+                        ll_weights[lw] = ll_weights[lw] - (learning_rate * neuron_deltas[lw] * next_layer_values[lw]);
                     }
                 }
                 neuron_deltas = temp_deltas;
@@ -150,7 +149,7 @@ impl Network {
             if let Neuron::Hidden(h) = neuron {
                 let ll_weights = &mut h.weights;
                 for lw in 0..ll_weights.len() {
-                    ll_weights[lw] = (learning_rate * neuron_deltas[lw] * input_layer_values[lw]) - ll_weights[lw];
+                    ll_weights[lw] = ll_weights[lw] - (learning_rate * neuron_deltas[lw] * input_layer_values[lw]);
                 }
             }
 
@@ -223,7 +222,7 @@ mod tests {
             }),
             Neuron::Hidden(Hidden {
                 input_value: 0.0,
-                weights: array![0.12, 0.08],
+                weights: array![-0.12, -0.08],
                 output_value: 0.0,
             }),
 
@@ -239,7 +238,7 @@ mod tests {
             &hidden_a,
         );
         hidden_ab.neurons = Array1::from_vec(neurons_b);
-        let mut output = OutputLayer::new(1, activation_functions::nop, activation_functions::nop_derivative, xavier_init, &hidden_a);
+        let mut output = OutputLayer::new(1, activation_functions::nop, activation_functions::nop_derivative, xavier_init, &hidden_ab);
         let outputs = vec![Neuron::Output(Output {
             input_value: 0.0,
             weights: array![-0.013, 0.020],
@@ -247,7 +246,7 @@ mod tests {
         })];
         output.outputs = Array1::from_vec(outputs);
 
-        Network::new(input_layer, vec![hidden_a, hidden_ab ], output)
+        Network::new(input_layer, vec![hidden_a, hidden_ab], output)
     }
 
     #[test]
@@ -284,13 +283,13 @@ mod tests {
     fn network_training_test() {
         let mut net = setup();
 
-        let mut error = 1.0;
+        let mut error = 0.1;
         let data = array![[1.0, -0.5, -0.5],
                                         [0.0, 0.5, -0.5],
                                         [0.0, -0.5, 0.5],
                                         [1.0, 0.5, 0.5]];
 
-        let iterations = 6000;
+        let iterations = 3000;
         let mut rng = rand::thread_rng();
 
         let mut error_vec: Vec<f32> = vec![];
@@ -303,7 +302,7 @@ mod tests {
             net.forward_pass();
             error = net.backward_pass(vec![data[[index, 0]]]);
 
-            if i % 100 == 0 {
+            if i % 10 == 0 {
                 let mut total_error = 0.0;
                 for n in 0..(data.shape()[0]) {
                     net.input_layer.set_inputs(vec![data[[n,1]], data[[n,2]]]);
@@ -313,7 +312,12 @@ mod tests {
                     total_error += net.output_layer.get(0).unwrap().get_output_value().abs() - data[[n, 0]].powf(2.0);
                     //println!("{}: {} - {} {} {} {}", i, total_error, data[[n,1]], data[[n,2]], data[[n,0]], net.output_layer.get(0).unwrap().get_output_value());
                 }
-                println!("{}: {}", i, (total_error*1.0/4.0).abs());
+                total_error = (total_error*1.0/4.0).abs();
+
+                println!("{}: {}", i, total_error);
+                if total_error < 0.00001 {
+                    break;
+                }
                 //println!("{:?}", &net);
             }
 
