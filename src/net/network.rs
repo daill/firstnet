@@ -192,7 +192,7 @@ mod tests {
     fn setup() -> Network{
         let mut input_layer = InputLayer::new(2, false);
         let mut hidden_a = HiddenLayer::new(
-            2, false,
+            3, true,
             activation_functions::sigmoid,
             activation_functions::sigmoid_derivative,
             xavier_init,
@@ -209,7 +209,11 @@ mod tests {
                 weights: array![0.13, 0.31],
                 output_value: 0.0,
             }),
-
+            Neuron::Bias(Bias {
+                input_value: 0.25,
+                output_value: 0.25,
+                weights: array![0.0],
+            })
 
         ];
         hidden_a.neurons = Array1::from_vec(neurons);
@@ -217,21 +221,25 @@ mod tests {
         let neurons_b = vec![
             Neuron::Hidden(Hidden {
                 input_value: 0.0,
-                weights: array![0.11, 0.21],
+                weights: array![0.11, 0.21, 0.31],
                 output_value: 0.0,
             }),
             Neuron::Hidden(Hidden {
                 input_value: 0.0,
-                weights: array![-0.12, -0.08],
+                weights: array![-0.12, -0.08, -0.01],
                 output_value: 0.0,
             }),
-
+            Neuron::Bias(Bias {
+                input_value: 0.25,
+                output_value: 0.25,
+                weights: array![0.0],
+            })
 
         ];
 
         let mut hidden_ab = HiddenLayer::new(
-            2,
-            false,
+            3,
+            true,
             activation_functions::sigmoid,
             activation_functions::sigmoid_derivative,
             xavier_init,
@@ -241,7 +249,7 @@ mod tests {
         let mut output = OutputLayer::new(1, activation_functions::nop, activation_functions::nop_derivative, xavier_init, &hidden_ab);
         let outputs = vec![Neuron::Output(Output {
             input_value: 0.0,
-            weights: array![-0.013, 0.020],
+            weights: array![-0.013, 0.020, 0.4],
             output_value: 0.0,
         })];
         output.outputs = Array1::from_vec(outputs);
@@ -283,7 +291,7 @@ mod tests {
     fn network_training_test() {
         let mut net = setup();
 
-        let mut error = 0.1;
+        let mut error = 1.0;
         let data = array![[1.0, -0.5, -0.5],
                                         [0.0, 0.5, -0.5],
                                         [0.0, -0.5, 0.5],
